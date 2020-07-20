@@ -16,7 +16,7 @@
 
 
 [Installation](#installation)
-[NPM Module Required!!!](#npm-module-required!!!)
+[NPM Module Required](#npm-module-required)
 [Documentation](#documentation)
 [Image Format](#image-format)
 [Mod List](#mod-list)
@@ -25,7 +25,7 @@
 - Download the actions folder from above.
 - Copy and paste all the files and folder to your bot's directory actions folder
 
-## NPM Module Required!!!
+## NPM Module Required
 - Basic Section
  - [x] canvas
  - [x] cwebp
