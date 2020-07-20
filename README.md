@@ -15,11 +15,11 @@
 </div>
 
 
-[Installation](#installation)
-[NPM Module Required](#npm-module-required)
-[Documentation](#documentation)
-[Image Format](#image-format)
-[Mod List](#mod-list)
+- [Installation](#installation)
+- [NPM Module Required](#npm-module-required)
+- [Documentation](#documentation)
+- [Image Format](#image-format)
+- [Mod List](#mod-list)
 
 ## Installation
 - Download the actions folder from above.
