@@ -16,10 +16,10 @@
 
 
 [Installation](#installation)
-[NPM Module Required!!!](#npmModule)
+[NPM Module Required!!!](#npm-module-required!!!)
 [Documentation](#documentation)
-[Image Format](#imageFormat)
-[Mod List](#modList)
+[Image Format](#image-format)
+[Mod List](#mod-list)
 
 ## Installation
 - Download the actions folder from above.
@@ -41,21 +41,21 @@
 
 ## Documentation
 ### Basic Image Manipulate
-* [Create Image](#createImage)
-* [Draw Image](#drawImage)
-* [Draw Text](#drawText)
+* [Create Image](#create-image)
+* [Draw Image](#draw-image)
+* [Draw Text](#draw-text)
 ### Advanced Image Manipulate
-* [Image Options](#controlImage)
-* [Crop Image](#cropImage)
-* [Edit Border](#editBorder)
-* [Filter Image](#Filter)
-* [Generate Progress Bar](#generateProgress)
-* [Image Recognize](#Recognize)
+* [Image Options](#image-options)
+* [Crop Image](#crop-image)
+* [Edit Border](#edit-border)
+* [Filter Image](#filter-image)
+* [Generate Progress Bar](#generate-progress-bar)
+* [Image Recognize](#image-recognize)
 ### Others
-* [Image Buffer](#toBuffer)
-* [GIF Image Buffer](#GifToBuffer)
-* [Discord Attachment](#toAttachment)
-* [Image Bridge](#imageBridge)
+* [Image Buffer](#image-buffer)
+* [GIF Image Buffer](#gif-image-buffer)
+* [Discord Attachment](#discord-attachment)
+* [Image Bridge](#image-bridge)
 
 ## Create Image
 ```js
@@ -185,7 +185,7 @@ Generate progress bar from options and other info
 this.Canvas.generateProgress({ type: 'circle', width: 100, height: 240 }, 'round', 20, 50, '#000000')
 ```
 
-## ImageRecognize
+## Image Recognize
 ```js
 DBM.Actions.Canvas.Recognize(img, options) => Promise[String]
 ```
