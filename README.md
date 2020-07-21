@@ -1,6 +1,6 @@
 <div align="center">
   <h1>
-    <img src="https://silversunset.net/dbm/favicon.ico" width="30px"> Discord Bot Maker Canvas Mod <img src="https://raw.githubusercontent.com/LeonZ2019/dbm-canvas/master/canvas.svg" width="30px">
+    <img src="https://silversunset.net/dbm/favicon.ico" width="30px"> Discord Bot Maker Canvas Mod <img src="https://raw.githubusercontent.com/LeonZ2019/dbm-canvas/master/canvas.svg?sanitize=true" height="30px">
   </h1>
   <p>
     Image mod interact with default image action
