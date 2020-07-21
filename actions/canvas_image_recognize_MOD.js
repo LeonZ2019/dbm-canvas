@@ -9,9 +9,6 @@ module.exports = {
     return `Recognize image ${storeTypes[parseInt(data.storage)]} (${data.varName}) for language ${data.lang}`
   },
 
-  github: 'github.com/LeonZ2019',
-  version: '2.0.0',
-
   fields: ['storage', 'varName', 'left', 'top', 'width', 'height', 'lang', 'offsetType', 'acceptRange', 'max', 'offset', 'forceAccept', 'forceMax', 'debug', 'storage2', 'varName2'],
 
   html: function (isEvent, data) {

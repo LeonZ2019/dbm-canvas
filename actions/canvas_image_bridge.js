@@ -10,9 +10,6 @@ module.exports = {
     return `${bridge[parseInt(data.bridge)]} ${storeTypes[parseInt(data.storage)]} (${data.varName}) -> ${storeTypes[parseInt(data.storage2)]} (${data.varName2})`
   },
 
-  github: 'github.com/LeonZ2019',
-  version: '2.0.0',
-
   variableStorage: function (data, varType) {
     const type = parseInt(data.storage2)
     if (type !== varType) return

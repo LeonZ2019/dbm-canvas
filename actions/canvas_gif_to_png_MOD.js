@@ -9,9 +9,6 @@ module.exports = {
     return `Extract Frame ${data.frame} to ${storeTypes[parseInt(data.storage2)]} (${data.varName2})`
   },
 
-  github: 'github.com/LeonZ2019',
-  version: '2.0.0',
-
   fields: ['storage', 'varName', 'frame', 'storage2', 'varName2'],
 
   html: function (isEvent, data) {

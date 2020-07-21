@@ -13,9 +13,6 @@ module.exports = {
     }
   },
 
-  github: 'github.com/LeonZ2019',
-  version: '2.0.0',
-
   variableStorage: function (data, varType) {
     const type = parseInt(data.storage)
     if (type !== varType) return

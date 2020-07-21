@@ -1,4 +1,3 @@
-/* eslint-disable eqeqeq */
 module.exports = {
 
   name: 'Canvas Draw Text on Image',
@@ -8,9 +7,6 @@ module.exports = {
   subtitle: function (data) {
     return `${data.text}`
   },
-
-  github: 'github.com/LeonZ2019',
-  version: '2.0.0',
 
   fields: ['storage', 'varName', 'x', 'y', 'fontPath', 'fontColor', 'fontSize', 'align', 'text', 'rotate', 'antialias', 'maxWidth', 'fillType'],
 
@@ -103,7 +99,7 @@ module.exports = {
     const maxWidth = this.evalMessage(data.maxWidth)
     if (maxWidth && !isNaN(maxWidth)) options.maxWidth = parseFloat(maxWidth)
     options.rotate = parseFloat(this.evalMessage(data.rotate, cache))
-    options.antialias = Boolean(data.antialias == 'true')
+    options.antialias = Boolean(data.antialias === 'true')
     options.type = data.fillType
     const text = this.evalMessage(data.text, cache)
     try {
@@ -131,7 +127,7 @@ module.exports = {
       if (!options.y || isNaN(options.y)) options.y = 0
       if (!options.rotate || isNaN(options.rotate)) options.rotate = 0
       if (options.maxWidth && isNaN(options.maxWidth)) delete options.maxWidth
-      if (typeof options.antialias == 'undefined') options.antialias = true
+      if (typeof options.antialias === 'undefined') options.antialias = true
       if (!options || !isNaN(options.align)) {
         if (options.align > 8 || options.align < 0) options.align = 0
       } else {
@@ -219,9 +215,9 @@ module.exports = {
           ctx.save()
           ctx.translate(options.x, options.y)
           ctx.rotate(options.rotate * Math.PI / 180)
-          if (options.type == 'fill') {
+          if (options.type === 'fill') {
             (options.maxWidth) ? ctx.fillText(text, 0, 0, options.maxWidth) : ctx.fillText(text, 0, 0)
-          } else if (options.type == 'stroke') {
+          } else if (options.type === 'stroke') {
             (options.maxWidth) ? ctx.strokeText(text, 0, 0, options.maxWidth) : ctx.strokeText(text, 0, 0)
           }
           dataUrl.images.push(canvas.toDataURL('image/png'))
@@ -232,9 +228,9 @@ module.exports = {
       } else {
         ctx.translate(options.x, options.y)
         ctx.rotate(options.rotate * Math.PI / 180)
-        if (options.type == 'fill') {
+        if (options.type === 'fill') {
           (options.maxWidth) ? ctx.fillText(text, 0, 0, options.maxWidth) : ctx.fillText(text, 0, 0)
-        } else if (options.type == 'stroke') {
+        } else if (options.type === 'stroke') {
           (options.maxWidth) ? ctx.strokeText(text, 0, 0, options.maxWidth) : ctx.strokeText(text, 0, 0)
         }
         ctx.drawImage(image, 0, 0)

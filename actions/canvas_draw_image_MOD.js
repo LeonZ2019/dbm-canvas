@@ -1,4 +1,3 @@
-/* eslint-disable eqeqeq */
 module.exports = {
 
   name: 'Canvas Draw Image on Image',
@@ -9,9 +8,6 @@ module.exports = {
     const storeTypes = ['', 'Temp Variable', 'Server Variable', 'Global Variable']
     return `${storeTypes[parseInt(data.storage2)]} (${data.varName2}) -> ${storeTypes[parseInt(data.storage)]} (${data.varName})`
   },
-
-  github: 'github.com/LeonZ2019',
-  version: '2.0.0',
 
   fields: ['storage', 'varName', 'storage2', 'varName2', 'x', 'y', 'effect', 'opacity', 'expand'],
 
@@ -103,7 +99,7 @@ module.exports = {
     options.opacity = parseFloat(this.evalMessage(data.opacity, cache))
     options.expand = Boolean(data.expand === 'true')
     const effect = parseInt(data.effect)
-    if (effect == 1) options.effect = 'mask'
+    if (effect === 1) options.effect = 'mask'
     try {
       const result = this.Canvas.drawImage(dataUrl, dataUrl2, options)
       this.storeValue(result, storage, varName, cache)
@@ -173,7 +169,7 @@ module.exports = {
       } else {
         options.opacity = Number(options.opacity) / 100
       }
-      if (options.effect && options.effect == 'mask') {
+      if (options.effect && options.effect === 'mask') {
         if (!dataUrl.animated && !dataUrl2.animated) {
           this.mask(ctx, image, image2, options.x, options.y, options.opacity)
           return canvas.toDataURL('image/png')

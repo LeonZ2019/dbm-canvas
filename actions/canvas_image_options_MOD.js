@@ -9,9 +9,6 @@ module.exports = {
     return `${storeTypes[parseInt(data.storage)]} (${data.varName})`
   },
 
-  github: 'github.com/LeonZ2019',
-  version: '2.0.0',
-
   fields: ['storage', 'varName', 'mirror', 'rotation', 'width', 'height'],
 
   html: function (isEvent, data) {

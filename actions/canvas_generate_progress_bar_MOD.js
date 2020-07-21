@@ -1,4 +1,3 @@
-/* eslint-disable eqeqeq */
 module.exports = {
 
   name: 'Canvas Generate Progress Bar',
@@ -11,9 +10,6 @@ module.exports = {
     const index = parseInt(data.type)
     return `Generate ${type[index]} Progress Bar ${storeTypes[parseInt(data.storage)]} (${data.varName})`
   },
-
-  github: 'github.com/LeonZ2019',
-  version: '2.0.0',
 
   variableStorage: function (data, varType) {
     const type = parseInt(data.storage)

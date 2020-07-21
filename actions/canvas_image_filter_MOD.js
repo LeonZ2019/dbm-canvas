@@ -10,9 +10,6 @@ module.exports = {
     return `${storeTypes[parseInt(data.storage)]} (${data.varName}) -> ${filter[parseInt(data.info)]} (${data.value})`
   },
 
-  github: 'github.com/LeonZ2019',
-  version: '2.0.0',
-
   fields: ['storage', 'varName', 'info', 'value'],
 
   html: function (isEvent, data) {

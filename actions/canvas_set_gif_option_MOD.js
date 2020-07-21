@@ -9,9 +9,6 @@ module.exports = {
     return `${type[parseInt(data.type)]} ${data.value}`
   },
 
-  github: 'github.com/LeonZ2019',
-  version: '2.0.0',
-
   fields: ['storage', 'varName', 'type', 'value'],
 
   html: function (isEvent, data) {
@@ -89,7 +86,7 @@ module.exports = {
       case 2:
         try {
           if (!value.endsWith('.png') && !value.endsWith('.jpg')) {
-            console.error('Please provide valid image format.')
+            this.Canvas.onError(cache, data, 'Please provide valid image format, png or jpg')
             return
           }
           const glob = this.getMods().require('glob')
@@ -104,7 +101,7 @@ module.exports = {
             dataUrl.width = img.width
             dataUrl.height = img.height
           } else {
-            console.log("'Value' is not valid images path!")
+            this.Canvas.onError(cache, data, "'Value' is not valid images path!")
             break
           }
         } catch (err) {

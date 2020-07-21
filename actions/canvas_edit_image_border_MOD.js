@@ -1,4 +1,3 @@
-/* eslint-disable eqeqeq */
 module.exports = {
 
   name: 'Canvas Edit Image Border',
@@ -9,9 +8,6 @@ module.exports = {
     const storeTypes = ['', 'Temp Variable', 'Server Variable', 'Global Variable']
     return `${storeTypes[parseInt(data.storage)]} (${data.varName})`
   },
-
-  github: 'github.com/LeonZ2019',
-  version: '2.0.0',
 
   fields: ['storage', 'varName', 'circleinfo', 'radius'],
 
@@ -102,7 +98,7 @@ module.exports = {
       const width = image.width || dataUrl.width
       const height = image.height || dataUrl.height
       if (isNaN(type)) type = type.toLowerCase()
-      if ([1, 'circle'].includes(type) && width != height) {
+      if ([1, 'circle'].includes(type) && width !== height) {
         type = 'corner'
         radius = Math.min(width, height) / 2
       }
