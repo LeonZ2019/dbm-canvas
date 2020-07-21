@@ -2,7 +2,7 @@ module.exports = {
 
   name: 'Canvas Auto Update',
 
-  version: '2.0.1',
+  version: '2.0.2',
 
   github: 'github.com/LeonZ2019',
 
@@ -88,18 +88,17 @@ module.exports = {
         if (fs.lstatSync(filePath).isDirectory()) {
           copyFolder(filePath, destPath)
         } else {
-          updateFiles.push(file)
+          if (path.extname(destPath).endsWith('.js') && path.basename(destPath) !== 'canvas_EXT') updateFiles.push(destPath)
           fs.copyFileSync(filePath, destPath, fs.constants.COPYFILE_FICLONE)
         }
       })
     }
     async function update (json) {
-      console.log(`Updating from GitHub ${repository} v ${json.tag_name}`)
+      console.log(`Updating to GitHub ${repository} v ${json.tag_name}`)
       if (fs.existsSync('./_temp')) {
         fs.rmdirSync('./_temp', { recursive: true })
       }
       fs.mkdirSync('./_temp')
-
       const zip = await fetch(json.zipball_url)
       zip.body.pipe(unzip.Extract({ path: './_temp' }))
       zip.body.on('end', async () => {
@@ -110,17 +109,17 @@ module.exports = {
           if (fs.lstatSync(filePath).isDirectory()) {
             copyFolder(filePath, file)
           } else {
-            updateFiles.push(file)
+            if (path.extname(file).endsWith('.js') && path.basename(file) !== 'canvas_EXT') updateFiles.push(file)
             fs.copyFileSync(filePath, file, fs.constants.COPYFILE_FICLONE)
           }
         })
-        fs.rmdirSync('./_temp', { recursive: true })
         updateFiles.forEach(function (file) {
-          delete require.cache(file)
-          const action = require(file)
+          delete require.cache[file]
+          const action = require(path.join(process.cwd(), file))
           this[action.name] = action.action
           action.mod(DBM)
         })
+        fs.rmdirSync('./_temp', { recursive: true })
         console.log(`Canvas mod updated to version ${json.tag_name}`)
       })
     }
