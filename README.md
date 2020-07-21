@@ -21,9 +21,10 @@
 - [Image Format](#image-format)
 - [Mod List](#mod-list)
 
-## Installation
-- Download the actions folder from above.
-- Copy and paste all the files and folder to your bot's directory actions folder
+## Installation Guide
+- Download the release from [here](https://github.com/LeonZ2019/dbm-canvas/releases)
+- Extract files and folder to your bot's directory actions folder
+- Linux User please download WebP release [here](https://developers.google.com/speed/webp/docs/precompiled)
 
 ## NPM Module Required
 - Basic Section
