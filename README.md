@@ -1,6 +1,6 @@
 <div align="center">
   <h1>
-    <img src="https://silversunset.net/dbm/favicon.ico" width="30px"> Discord Bot Maker Canvas Mod
+    <img src="https://silversunset.net/dbm/favicon.ico" width="30px"> Discord Bot Maker Canvas Mod <img src="https://raw.githubusercontent.com/LeonZ2019/dbm-canvas/master/canvas.svg" width="30px">
   </h1>
   <p>
     Image mod interact with default image action
@@ -258,10 +258,11 @@ this.Canvas.bridge(img, 1)
   - [Object] Type
     - [Integer] **`width`** Width of the gif
     - [Integer] **`height`** Height of the gif
+    - [Boolean] **`animated`** Is animated, default value is `true`
     - [Array] **`images`** Array images of the gif
       - [String] **`item`** Encoding in `base64` format
     - [Integer] **`delay`** Delay for the each frame
-    - [Integer] **`loopCount`** Loop for the gif, if is `0`
+    - [Integer] **`loopCount`** Loop for the gif, if it is `0`, mean infinity loop
   - Mainly format from `gif` or multiple local png image
 
 ## Mod List
