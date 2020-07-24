@@ -60,16 +60,19 @@
 
 ## Create Image
 ```js
-DBM.Actions.Canvas.createImage(url) => Promise[Image]
+DBM.Actions.Canvas.createImage(url, options) => Promise[Image]
 ```
 Image type support png, jpg, gif webp(still image) and of course base64 image, it can be web image or local
 - [String] **`url`** source image from local or url
+- [Object] **`options`**
+  - [Integer] **`delay`** Delay for gif if image is animated
+  - [Integer] **`loop`** Loop for gif if image is animated
 ```
-this.Canvas.createImage('https://www.website.com/image.png').then((image) => {
+this.Canvas.createImage('https://www.website.com/image_**.png', { delay: 100, loop: 0 }).then((image) => {
 })
 
 // or with async/await:
-const image = await this.Canvas.createImage('.\resources\img_**.png')
+const image = await this.Canvas.createImage('.\resources\img.gif')
 }
 ```
 
@@ -247,7 +250,12 @@ Function convert Canvas image to Jimp image or Jimp image to Canvas image
 - [Image] **`img`** target image
 - [Integer] **`type`** value for (C->J) is `0` and (J->C) is blank or any number that value is not `0`
 ```js
-this.Canvas.bridge(img, 1)
+this.Canvas.bridge(img, 1).then((image) => {
+})
+
+// or with async/await:
+const image = await this.Canvas.bridge(img, 0)
+}
 ```
 
 ## Image Format
@@ -261,7 +269,7 @@ this.Canvas.bridge(img, 1)
     - [Integer] **`height`** Height of the gif
     - [Boolean] **`animated`** Is animated, default value is `true`
     - [Array] **`images`** Array images of the gif
-      - [String] **`item`** Encoding in `base64` format
+      - [Image] **`img`** image generate from canvas
     - [Integer] **`delay`** Delay for the each frame
     - [Integer] **`loopCount`** Loop for the gif, if it is `0`, mean infinity loop
   - Mainly format from `gif` or multiple local png image
