@@ -109,7 +109,7 @@ module.exports = {
     }
     const options = {}
     options.width = this.evalMessage(data.width, cache)
-    options.height = this.evalMessage(data.width, cache)
+    options.height = this.evalMessage(data.height, cache)
     options.align = parseInt(data.align)
     if (options.align === 9) {
       options.align2 = parseInt(data.align2)
