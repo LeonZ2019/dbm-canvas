@@ -9,7 +9,7 @@ module.exports = {
     return `${storeTypes[parseInt(data.storage)]} (${data.varName})`
   },
 
-  fields: ['storage', 'varName', 'mirror', 'rotation', 'width', 'height'],
+  fields: ['storage', 'varName', 'mirror', 'rotation', 'width', 'height', 'resampling'],
 
   html: function (isEvent, data) {
     return `
@@ -49,6 +49,16 @@ module.exports = {
       Scale Height (direct size or percent):<br>
       <input id="height" class="round" type="text" value="100%"><br>
     </div>
+  </div><br><br><br>
+  <div style="padding-top: 8px;">
+    <div style="float: left; width: 45%;">
+      Resampling:<br>
+      <select id="resampling" class="round">
+        <option value="0" selected>Bilinear</option>
+        <option value="1">Bicubic</option>
+        <option value="2">Nearest</option>
+      </select>
+    </div>
   </div>`
   },
 
@@ -68,6 +78,7 @@ module.exports = {
     const options = {}
     if (typeof data.mirror !== 'undefined') options.flip = parseInt(data.mirror)
     if (typeof data.rotate !== 'undefined') options.rotate = parseInt(data.rotation)
+    if (typeof data.resampling !== 'undefined') options.resampling = parseInt(data.resampling)
     const scalex = this.evalMessage(data.width, cache)
     const scaley = this.evalMessage(data.height, cache)
     if (scalex || scaley) options.resize = {}
@@ -160,6 +171,25 @@ module.exports = {
       imageHeight *= Math.abs(scaleHeight)
       const canvas = this.CanvasJS.createCanvas(imageWidth, imageHeight)
       const ctx = canvas.getContext('2d')
+      if (!options.resampling) options.resampling = 0
+      switch (options.resampling) {
+        default:
+        case 0:
+        case 'good':
+        case 'bilinear':
+          ctx.patternQuality = 'good'
+          break
+        case 1:
+        case 'best':
+        case 'bicubic':
+          ctx.patternQuality = 'best'
+          break
+        case 2:
+        case 'fast':
+        case 'nearest':
+          ctx.patternQuality = 'fast'
+          break
+      }
       ctx.translate(imageWidth / 2, imageHeight / 2)
       ctx.rotate(radian)
       ctx.scale(scaleWidth, scaleHeight)

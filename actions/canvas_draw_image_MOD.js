@@ -155,13 +155,6 @@ module.exports = {
       const image2 = this.loadImage(dataUrl2)
       const width = image.width || dataUrl.width
       const height = image.height || dataUrl.height
-      let canvas
-      if (options.expand) {
-        canvas = this.CanvasJS.createCanvas(Math.max(width, image2.width || dataUrl2.width), Math.max(height, image2.height || dataUrl2.height))
-      } else {
-        canvas = this.CanvasJS.createCanvas(width, height)
-      }
-      const ctx = canvas.getContext('2d')
       if (!options.x || isNaN(options.x)) options.x = 0
       if (!options.y || isNaN(options.y)) options.y = 0
       if (!options.opacity || (options.opacity && isNaN(options.opacity)) || options.opacity > 100) {
@@ -169,6 +162,13 @@ module.exports = {
       } else {
         options.opacity = Number(options.opacity) / 100
       }
+      let canvas
+      if (options.expand) {
+        canvas = this.CanvasJS.createCanvas(Math.max(width, (image2.width || dataUrl2.width) + options.x), Math.max(height, (image2.height || dataUrl2.height) + options.y))
+      } else {
+        canvas = this.CanvasJS.createCanvas(width, height)
+      }
+      const ctx = canvas.getContext('2d')
       if (options.effect && options.effect === 'mask') {
         if (!dataUrl.animated && !dataUrl2.animated) {
           this.mask(ctx, image, image2, options.x, options.y, options.opacity)

@@ -8,7 +8,7 @@ module.exports = {
     return `${data.text}`
   },
 
-  fields: ['storage', 'varName', 'x', 'y', 'fontPath', 'fontColor', 'fontSize', 'align', 'text', 'rotate', 'antialias', 'maxWidth', 'fillType'],
+  fields: ['storage', 'varName', 'x', 'y', 'fontPath', 'fontColor', 'fontSize', 'align', 'text', 'rotate', 'antialias', 'maxWidth', 'fillType', 'autoWrap'],
 
   html: function (isEvent, data) {
     return `
@@ -36,8 +36,11 @@ module.exports = {
       <input id="x" class="round" type="text" value="0"><br>
       Rotate (0 - 359):<br>
       <input id="rotate" class="round" type="text" value="0"><br>
-      Max Width:<br>
-      <input id="maxWidth" class="round" type="text" placeholder="Leave it blank for None."><br>
+      Auto Wrap Text:<br>
+      <select id="autoWrap" class="round" style="width: 90%;">
+        <option value="1" selected>True</option>
+        <option value="0">False</option>
+      </select><br>
     </div>
     <div style="float: right; width: 50%;">
       Variable Name:<br>
@@ -60,20 +63,22 @@ module.exports = {
       </select><br>
     </div><br><br><br><br>
     <div>
+      Max Width:<br>
+      <input id="maxWidth" class="round" type="text" style="width: 95%;"placeholder="Leave it blank for None."><br>
       Text:<br>
-      <textarea id="text" rows="2" placeholder="Insert text here..." style="width: 95%; white-space: nowrap; resize: none;"></textarea>
+      <textarea id="text" rows="3" placeholder="Insert text here..." style="width: 95%; resize: none;"></textarea>
     </div>
   </div>`
   },
 
   init: function () {
     const { glob, document } = this
-
     glob.refreshVariableList(document.getElementById('storage'))
   },
 
   action: function (cache) {
     const fs = require('fs')
+    const path = require('path')
     const data = cache.actions[cache.index]
     const storage = parseInt(data.storage)
     const varName = this.evalMessage(data.varName, cache)
@@ -86,16 +91,18 @@ module.exports = {
 
     const options = {}
     const font = this.evalMessage(data.fontPath, cache)
-    if (!fs.existsSync(font)) {
+    if (!font || !fs.existsSync(path.normalize(font))) {
       this.Canvas.onError(data, cache, 'Font file not exist!')
       return
+    } else {
+      options.font = path.normalize(font)
     }
-    options.font = font
     options.color = this.evalMessage(data.fontColor, cache)
     options.size = parseInt(this.evalMessage(data.fontSize, cache))
     options.align = parseInt(data.align)
     options.x = parseFloat(this.evalMessage(data.x, cache))
     options.y = parseFloat(this.evalMessage(data.y, cache))
+    options.autoWrap = parseInt(data.autoWrap)
     const maxWidth = this.evalMessage(data.maxWidth)
     if (maxWidth && !isNaN(maxWidth)) options.maxWidth = parseFloat(maxWidth)
     options.rotate = parseFloat(this.evalMessage(data.rotate, cache))
@@ -116,6 +123,7 @@ module.exports = {
       DBM.Actions.Canvas.OpenTypeJS = DBM.Actions.getMods().require('opentype.js')
     }
     DBM.Actions.Canvas.drawText = function (dataUrl, text, options) {
+      const path = require('path')
       if (!options) options = {}
       if (!options.color) {
         options.color = '#000000'
@@ -134,30 +142,17 @@ module.exports = {
         options.align = options.align.toUpperCase()
         if (!['TL', 'TC', 'TR', 'ML', 'MC', 'MR', 'BL', 'BC', 'BR'].includes(options.align)) options.align = 'TL'
       }
+      if (!['undefined', 'boolean'].includes(typeof options.autoWrap)) {
+        options.autoWrap = Boolean(options.autoWrap === 1)
+      }
       (!options.type || !['fill', 'stroke'].includes(options.type.toLowerCase())) ? options.type = 'fill' : options.type = options.type.toLowerCase()
-      const font = this.OpenTypeJS.loadSync(options.font)
+      const font = this.OpenTypeJS.loadSync(path.normalize(options.font))
       this.CanvasJS.registerFont(options.font, { family: font.names.postScriptName.en })
       const image = this.loadImage(dataUrl)
       const canvas = this.CanvasJS.createCanvas(image.width || dataUrl.width, image.height || dataUrl.height)
       const ctx = canvas.getContext('2d')
       ctx.font = `${font.names.fontSubfamily.en} ${options.size}px "${font.names.postScriptName.en}"`
       ctx.fillStyle = options.color
-      // type 1 options.align (Number) [0-9]
-      // -------------
-      // | 0 | 1 | 2 |
-      // -------------
-      // | 3 | 4 | 5 |
-      // -------------
-      // | 6 | 7 | 8 |
-      // -------------
-      // type 2 options.align (Text) -> [TL, TC, TR, ML MC, MR, BL, BC, BR]
-      // ----------------
-      // | TL | TC | TR |
-      // ----------------
-      // | ML | MC | MR |
-      // ----------------
-      // | BL | BC | BR |
-      // ----------------
       switch (options.align) {
         case 0:
         case 'TL':
@@ -206,6 +201,52 @@ module.exports = {
           ctx.textAlign = 'right'
           break
       }
+      if (options.autoWrap) {
+        let maxWidth
+        if (!options.maxWidth) {
+          if (ctx.textAlign === 'left') {
+            if (options.x < 0) {
+              maxWidth = canvas.width - options.x
+            } else if (options.x > canvas.width) {
+              maxWidth = canvas.width
+            } else {
+              maxWidth = canvas.width - options.x
+            }
+          } else if (ctx.textAlign === 'center') {
+            if (options.x < 0) {
+              maxWidth = 2 * canvas.width - options.x
+            } else if (options.x > canvas.width) {
+              maxWidth = 2 * options.x
+            } else {
+              maxWidth = 2 * Math.min((canvas.width - options.x), options.x)
+            }
+          } else if (ctx.textAlign === 'right') {
+            if (options.x < 0) {
+              maxWidth = canvas.width
+            } else if (options.x > canvas.width) {
+              maxWidth = canvas.width - options.x
+            } else {
+              maxWidth = options.x
+            }
+          }
+        } else {
+          maxWidth = options.maxWidth
+        }
+        const tempText = text.split(' ')
+        text = []
+        let line = ''
+        for (let i = 0; i < tempText.length; i++) {
+          const measure = (line === '') ? tempText[i] : line + ' ' + tempText[i]
+          const { width } = ctx.measureText(measure)
+          if (width <= maxWidth) {
+            line = measure
+          } else {
+            (line === '') ? text.push(measure) : text.push(line)
+            line = ''
+          }
+        }
+        text = text.join('\n')
+      }
       ctx.textDrawingMode = 'path'
       if (options.antialias) ctx.antialias = 'none'
       if (dataUrl.animated) {
@@ -226,6 +267,7 @@ module.exports = {
         }
         return dataUrl
       } else {
+        ctx.drawImage(image, 0, 0)
         ctx.translate(options.x, options.y)
         ctx.rotate(options.rotate * Math.PI / 180)
         if (options.type === 'fill') {
@@ -233,7 +275,6 @@ module.exports = {
         } else if (options.type === 'stroke') {
           (options.maxWidth) ? ctx.strokeText(text, 0, 0, options.maxWidth) : ctx.strokeText(text, 0, 0)
         }
-        ctx.drawImage(image, 0, 0)
         return canvas.toDataURL('image/png')
       }
     }

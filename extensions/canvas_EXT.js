@@ -2,7 +2,7 @@ module.exports = {
 
   name: 'Canvas Auto Update',
 
-  version: '2.0.2',
+  version: '2.1.0',
 
   github: 'github.com/LeonZ2019',
 
@@ -47,6 +47,7 @@ module.exports = {
     const unzip = DBM.Actions.getMods().require('unzipper')
     const fs = require('fs')
     const path = require('path')
+    DBM.Actions.Canvas.version = this.version
     const Extension = JSON.parse(fs.readFileSync(path.join('data', 'settings.json')))['Canvas Auto Update']
     const updateFiles = []
     const api = 'https://api.github.com/repos/'
@@ -59,7 +60,7 @@ module.exports = {
         console.log('Canvas mod release not found.')
         return
       }
-      const current = getVersion(DBM.Actions.Canvas.version)
+      const current = getVersion(this.version)
       const latest = getVersion(json.tag_name)
       if (latest.major > current.major) {
         await update(json)
@@ -69,12 +70,8 @@ module.exports = {
         } else if (latest.minor === current.minor) {
           if (latest.revision > current.revision) {
             await update(json)
-          } else {
-            console.log('Canvas mod is up to date.')
           }
         }
-      } else {
-        console.log('Canvas mod is up to date.')
       }
     }
     function copyFolder (source, target) {
