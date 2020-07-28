@@ -19,6 +19,7 @@
 - [NPM Module Required](#npm-module-required)
 - [Documentation](#documentation)
 - [Image Format](#image-format)
+- [Align Format](#align-format)
 - [Mod List](#mod-list)
 
 ## Installation Guide
@@ -110,6 +111,7 @@ Draw text on above image with support font TrueType and OpenType
   - [String] **`font`** The path of the font file
   - [Boolean] **`antialias`** anti alias for the text
   - [Boolean] **`rotate`** Rotate for the text, effective range should be `0` - `359`
+  - [Boolean | Integer] **`autoWrap`** Auto wrap for text if text's width is bigger than max width, exist value is `1` or `true`, leave it blank to disable it
 ```js
 this.Canvas.drawText(img, 'Hello World', { x: 5, y: 5, color: '#000000', size: 20, align: 'TL', type: 'fill', maxWidth: 40, font: 'fonts\arial.ttf', rotate: 180, antialias: true})
 ```
@@ -126,7 +128,8 @@ Control image function includes resize or scale, flip and rotate
     - [Integer] **`height`** height for the image
     - [Boolean] **`aspectRatio`** Set `true` to keep the image look same after scale
   - [Integer | String] **`flip`** Flip image with 3 possible way, `0` - `3` or `horizontal`, `vertical` and `diagonal`
-  - [INteger] **`rotate`** Rotate the image, the width and the height will auto change to size after rotate
+  - [Integer] **`rotate`** Rotate the image, the width and the height will auto change to size after rotate
+  - [Integer | String] **`resampling`** Resize image with resample method, exist value is `0` to `2` or `'good'` | `'bilinear'`, `'best'` | `'bicubic'`, `'fast'` | `'nearest'`
 ```js
 this.Canvas.controlImage(img, { resize: { width: 500, aspectRatio: true }, rotate: 90 })
 ```
@@ -273,6 +276,12 @@ const image = await this.Canvas.bridge(img, 0)
     - [Integer] **`delay`** Delay for the each frame
     - [Integer] **`loopCount`** Loop for the gif, if it is `0`, mean infinity loop
   - Mainly format from `gif` or multiple local png image
+
+## Align Format
+- [Integer] Type 1
+  -  **`align`** valid from `0` to `8`
+- [String] Type 2
+  -  **`align`** valid values `'TL'`, `'TC'`, `'TR'`, `'ML'`, `'MC'`, `'MR'`, `'BL'`, `'BC'` and `'BR'`
 
 ## Mod List
 1. Canvas Create Image
