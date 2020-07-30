@@ -235,19 +235,54 @@ module.exports = {
         const tempText = text.split(' ')
         text = []
         let line = ''
-        for (let i = 0; i < tempText.length; i++) {
-          const measure = (line === '') ? tempText[i] : line + ' ' + tempText[i]
+        while (tempText.length !== 0) {
+          let measure = (line === '') ? tempText[0] : line + ' ' + tempText[0]
           const { width } = ctx.measureText(measure)
           if (width <= maxWidth) {
+            tempText.shift()
             line = measure
           } else {
-            (line === '') ? text.push(measure) : text.push(line)
-            line = ''
+            if (line === '') {
+              let postMeasure = true
+              let around = Math.floor(measure.length / width * maxWidth)
+              while (postMeasure) {
+                const reWidth = ctx.measureText(measure.slice(0, around)).width
+                if (reWidth <= maxWidth) { around-- } else {
+                  text.push(measure.slice(0, around))
+                  measure = measure.substr(around)
+                  tempText[0] = measure
+                  if (width - reWidth > maxWidth) {
+                    around = Math.floor(measure.length / (width - reWidth) * maxWidth)
+                  } else {
+                    postMeasure = false
+                  }
+                }
+              }
+            } else {
+              if (maxWidth * 2 < width) {
+                let around = Math.floor(measure.length / width * maxWidth)
+                let reWidth = ctx.measureText(measure.slice(0, around)).width
+                while (reWidth > maxWidth) {
+                  around--
+                  reWidth = ctx.measureText(measure.slice(0, around)).width
+                }
+                text.push(measure.slice(0, around))
+                tempText[0] = measure.substr(around)
+              } else {
+                text.push(line)
+              }
+              line = ''
+            }
           }
         }
-        text = text.join('\n')
+        if (line !== '') {
+          text.push(line)
+        }
+        if (typeof text === 'object') {
+          text = text.join('\n')
+        }
       }
-      ctx.textDrawingMode = 'path'
+      ctx.textDrawingMode = 'glyph'
       if (options.antialias) ctx.antialias = 'none'
       if (dataUrl.animated) {
         dataUrl.images = []

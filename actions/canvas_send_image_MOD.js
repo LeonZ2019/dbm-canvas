@@ -118,6 +118,33 @@ module.exports = {
   },
 
   mod: function (DBM) {
+    if (!DBM.Actions.Canvas.Encoder) {
+      const chalk = DBM.Actions.getMods().require('chalk')
+      const fs = require('fs')
+      const path = require('path')
+      const colors = ['#7FFF7F', '#FFFF7F', '#FFC34C', '#FF4C4C']
+      try {
+        let installModules = JSON.parse(fs.readFileSync('package.json'))
+        let tried = 0
+        while (typeof installModules.dependencies.gifski === 'undefined' && tried !== 3) {
+          console.log(chalk.hex(colors[tried])(`Canvas Installing module 'gifski'... tried : ${tried}`))
+          tried++
+          require('child_process').execSync('npm i gifski')
+          installModules = JSON.parse(fs.readFileSync('package.json'))
+          if (typeof installModules.dependencies.gifski !== 'undefined') {
+            console.log(chalk.hex(colors[0])("Canvas installed module 'gifski'."))
+            tried = 3
+          }
+        }
+        require.resolve('gifski')
+        const encoderLoc = path.join('node_modules', 'gifski', 'bin', (process.platform === 'win32') ? 'windows' : 'debian')
+        const encoder = fs.readdirSync(encoderLoc)[0]
+        DBM.Actions.Canvas.Encoder = path.join(encoderLoc, encoder)
+      } catch (err) {
+        console.error(chalk.hex(colors[3])("Canvas Error: Failed to install module 'gifski', try install manual with 'npm i gifski'"))
+      }
+    }
+
     DBM.Actions.Canvas.toBuffer = function (dataUrl) {
       const image = this.loadImage(dataUrl)
       const canvas = this.CanvasJS.createCanvas(image.width, image.height)
@@ -128,21 +155,24 @@ module.exports = {
     }
 
     DBM.Actions.Canvas.GifToBuffer = function (dataUrl) {
-      const encoder = new this.GifEncoder(dataUrl.width, dataUrl.height, 'neuquant', false, dataUrl.images.length)
-      encoder.start()
-      encoder.setRepeat(dataUrl.loopCount)
-      encoder.setDelay(dataUrl.delay)
-      encoder.setQuality(20)
+      const fs = require('fs')
+      const path = require('path')
+      const temp = fs.mkdtempSync(require('os').tmpdir() + path.sep)
+      const images = this.loadImage(dataUrl)
       const canvas = this.CanvasJS.createCanvas(dataUrl.width, dataUrl.height)
       const ctx = canvas.getContext('2d')
-      const images = this.loadImage(dataUrl)
+      const frameLength = images.length.toString().length
       for (let i = 0; i < images.length; i++) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
         ctx.drawImage(images[i], 0, 0)
-        encoder.addFrame(ctx.getImageData(0, 0, dataUrl.width, dataUrl.height).data)
+        const buffer = canvas.toBuffer('image/png', { compressionLevel: 9 })
+        let frameName = i.toString()
+        while (frameName.length !== frameLength) frameName = '0' + frameName
+        fs.writeFileSync(`${temp}${path.sep}image${frameName}.png`, buffer)
       }
-      encoder.finish()
-      return encoder.out.getData()
+      require('child_process').execSync(`${this.Encoder} --quiet ${(dataUrl.loopCount !== 0) ? '--once' : ''} --fps ${1000 / dataUrl.delay} -o ${temp}${path.sep}temp.gif ${temp}${path.sep}image*.png`)
+      const buffer = fs.readFileSync(`${temp}${path.sep}temp.gif`)
+      fs.rmdirSync(temp, { recursive: true })
+      return buffer
     }
 
     DBM.Actions.Canvas.toAttachment = function (dataUrl, name) {
