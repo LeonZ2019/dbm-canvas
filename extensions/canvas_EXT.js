@@ -2,7 +2,7 @@ module.exports = {
 
   name: 'Canvas Auto Update',
 
-  version: '2.1.0',
+  version: '2.1.1',
 
   github: 'github.com/LeonZ2019',
 
@@ -45,6 +45,7 @@ module.exports = {
   mod: async function (DBM) {
     const fetch = DBM.Actions.getMods().require('node-fetch')
     const unzip = DBM.Actions.getMods().require('unzipper')
+    const chalk = DBM.Actions.getMods().require('chalk')
     const fs = require('fs')
     const path = require('path')
     DBM.Actions.Canvas.version = this.version
@@ -57,7 +58,7 @@ module.exports = {
       const res = await fetch(api + repository + release)
       const json = await res.json()
       if (json.message) {
-        console.log('Canvas mod release not found.')
+        console.log(chalk.hex('#FFFF7F')('Canvas mod release not found.'))
         return
       }
       const current = getVersion(this.version)
@@ -91,7 +92,7 @@ module.exports = {
       })
     }
     async function update (json) {
-      console.log(`Updating to GitHub ${repository} v ${json.tag_name}`)
+      console.log(chalk.hex('#7FFF7F')(`Updating to GitHub ${repository} v ${json.tag_name}`))
       if (fs.existsSync('./_temp')) {
         fs.rmdirSync('./_temp', { recursive: true })
       }
@@ -117,7 +118,7 @@ module.exports = {
           action.mod(DBM)
         })
         fs.rmdirSync('./_temp', { recursive: true })
-        console.log(`Canvas mod updated to version ${json.tag_name}`)
+        console.log(chalk.hex('#7FFF7F')(`Canvas mod updated to version ${json.tag_name}`))
       })
     }
     function getVersion (version) {
