@@ -25,7 +25,8 @@
 ## Installation Guide
 - Download the release from [here](https://github.com/LeonZ2019/dbm-canvas/releases)
 - Extract files and folder to your bot's directory actions folder
-- Linux User please download WebP release [here](https://developers.google.com/speed/webp/docs/precompiled)
+- Linux user please download WebP release [here](https://developers.google.com/speed/webp/docs/precompiled)
+- Linux user please check [this](https://github.com/Intervox/node-webp) `cwebp` installation if still failed on creating image for .webp format
 
 ## NPM Module Required
 - Basic Section
@@ -33,13 +34,17 @@
  - [x] cwebp
  - [x] glob
  - [x] node-fetch
+ - [x] chalk
 - GIF Section
- - [x] gif-encoder-2
  - [x] pixel-gif
 - Font Section
  - [x] opentype.js
 - Image Recognize Section
  - [x] tesseract.js
+- Extension
+ - [x] unzipper
+ - [x] chalk
+ - [x] node-fetch
 
 ## Documentation
 ### Basic Image Manipulate
