@@ -169,103 +169,83 @@ module.exports = {
         canvas = this.CanvasJS.createCanvas(width, height)
       }
       const ctx = canvas.getContext('2d')
-      if (options.effect && options.effect === 'mask') {
-        if (!dataUrl.animated && !dataUrl2.animated) {
+      if (!dataUrl.animated && !dataUrl2.animated) {
+        if (options.effect && options.effect === 'mask') {
           this.mask(ctx, image, image2, options.x, options.y, options.opacity)
           return canvas.toDataURL('image/png')
-        } else if (!dataUrl.animated && dataUrl2.animated) {
-          dataUrl2.images = []
-          for (let i = 0; i < image2.length; i++) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height)
-            this.mask(ctx, image, image2[i], options.x, options.y, options.opacity)
-            dataUrl2.images.push(canvas.toDataURL('image/png'))
-          }
-          return dataUrl2
-        } else if (dataUrl.animated && !dataUrl2.animated) {
-          dataUrl.images = []
-          for (let i = 0; i < image.length; i++) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height)
-            this.mask(ctx, image[i], image2, options.x, options.y, options.opacity)
-            dataUrl.images.push(canvas.toDataURL('image/png'))
-          }
-          return dataUrl
-        } else if (dataUrl.animated && dataUrl2.animated) {
-          dataUrl.images = []
-          const maxFrame = Math.max(image.length, image2.length)
-          let imageFrame = 0
-          let image2Frame = 0
-          for (let i = 0; i < maxFrame; i++) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height)
-            this.mask(ctx, image[imageFrame], image2[image2Frame], options.x, options.y, options.opacity)
-            dataUrl.images.push(canvas.toDataURL('image/png'))
-            if (imageFrame + 1 > image.length) {
-              imageFrame = 0
-            } else {
-              imageFrame++
-            }
-            if (image2Frame + 1 > image2.length) {
-              image2Frame = 0
-            } else {
-              image2Frame++
-            }
-          }
-          return dataUrl
-        }
-      } else {
-        if (!dataUrl.animated && !dataUrl2.animated) {
+        } else {
           ctx.drawImage(image, 0, 0)
           ctx.globalAlpha = options.opacity
           ctx.drawImage(image2, options.x, options.y)
           return canvas.toDataURL('image/png')
-        } else if (!dataUrl.animated && dataUrl2.animated) {
-          dataUrl2.images = []
-          for (let i = 0; i < image2.length; i++) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height)
+        }
+      } else if (!dataUrl.animated && dataUrl2.animated) {
+        dataUrl2.images = []
+        dataUrl2.width = canvas.width
+        dataUrl2.height = canvas.height
+        for (let i = 0; i < image2.length; i++) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height)
+          if (options.effect && options.effect === 'mask') {
+            this.mask(ctx, image, image2[i], options.x, options.y, options.opacity)
+          } else {
             ctx.globalAlpha = 1
             ctx.drawImage(image, 0, 0)
             ctx.globalAlpha = options.opacity
             ctx.drawImage(image2[i], options.x, options.y)
-            dataUrl2.images.push(canvas.toDataURL('image/png'))
           }
-          return dataUrl2
-        } else if (dataUrl.animated && !dataUrl2.animated) {
-          dataUrl.images = []
-          for (let i = 0; i < image.length; i++) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height)
+          dataUrl2.images.push(canvas.toDataURL('image/png'))
+        }
+        return dataUrl2
+      } else if (dataUrl.animated && !dataUrl2.animated) {
+        dataUrl.images = []
+        dataUrl.width = canvas.width
+        dataUrl.height = canvas.height
+        for (let i = 0; i < image.length; i++) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height)
+          if (options.effect && options.effect === 'mask') {
+            this.mask(ctx, image[i], image2, options.x, options.y, options.opacity)
+          } else {
             ctx.globalAlpha = 1
             ctx.drawImage(image[i], 0, 0)
             ctx.globalAlpha = options.opacity
             ctx.drawImage(image2, options.x, options.y)
             dataUrl.images.push(canvas.toDataURL('image/png'))
           }
-          return dataUrl
-        } else if (dataUrl.animated && dataUrl2.animated) {
-          dataUrl.images = []
-          const maxFrame = Math.max(image.length, image2.length)
-          let imageFrame = 0
-          let image2Frame = 0
-          for (let i = 0; i < maxFrame; i++) {
+          dataUrl.images.push(canvas.toDataURL('image/png'))
+        }
+        return dataUrl
+      } else if (dataUrl.animated && dataUrl2.animated) {
+        dataUrl.images = []
+        dataUrl.width = canvas.width
+        dataUrl.height = canvas.height
+        const maxFrame = Math.max(image.length, image2.length)
+        let imageFrame = 0
+        let image2Frame = 0
+        for (let i = 0; i < maxFrame; i++) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height)
+          if (options.effect && options.effect === 'mask') {
             ctx.clearRect(0, 0, canvas.width, canvas.height)
+            this.mask(ctx, image[imageFrame], image2[image2Frame], options.x, options.y, options.opacity)
+          } else {
             ctx.globalAlpha = 1
             ctx.drawImage(image[imageFrame], 0, 0)
             ctx.globalAlpha = options.opacity
             ctx.drawImage(image2[image2Frame], options.x, options.y)
-            dataUrl.images.push(canvas.toDataURL('image/png'))
-            if (imageFrame + 1 >= image.length) {
-              imageFrame = 0
-            } else {
-              imageFrame++
-            }
-            if (image2Frame + 1 >= image2.length) {
-              image2Frame = 0
-            } else {
-              image2Frame++
-            }
           }
-          return dataUrl
+          dataUrl.images.push(canvas.toDataURL('image/png'))
+          if (imageFrame + 1 > image.length) {
+            imageFrame = 0
+          } else {
+            imageFrame++
+          }
+          if (image2Frame + 1 > image2.length) {
+            image2Frame = 0
+          } else {
+            image2Frame++
+          }
         }
+        return dataUrl
       }
     }
   }
-
 }

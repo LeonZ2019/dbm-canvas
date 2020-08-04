@@ -127,8 +127,14 @@ module.exports = {
       if (!options) options = {}
       if (!options.color) {
         options.color = '#000000'
-      } else if (!isNaN(options.color) && !options.color.startsWith('#')) {
-        options.color = '#' + options.color
+      } else {
+        if (typeof options.color === 'number') options.color = options.color.toString()
+        const match = options.color.match(new RegExp('[0-9a-fA-F]{6}', 'g'))
+        if (match !== null) {
+          options.color = '#' + match[0].toUpperCase()
+        } else {
+          options.color = '#000000'
+        }
       }
       if (!options.size || isNaN(options.size)) options.size = 10
       if (!options.x || isNaN(options.x)) options.x = 0

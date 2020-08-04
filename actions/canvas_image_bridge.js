@@ -86,7 +86,13 @@ module.exports = {
     DBM.Actions.Canvas.bridge = async function (image, type) {
       const Jimp = DBM.Actions.getMods().require('jimp')
       if (type && type === 0) {
-        return await Jimp.read(this.Canvas.toBuffer(image))
+        let buffer
+        if (image.animated) {
+          buffer = this.GifToBuffer(image)
+        } else {
+          buffer = this.toBuffer(image)
+        }
+        return await Jimp.read(buffer)
       } else {
         return await image.getBufferAsync(Jimp.MIME_PNG)
       }
