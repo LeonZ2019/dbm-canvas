@@ -34,10 +34,10 @@ module.exports = {
   </div>`
   },
 
-  init: function (document, globalObject) {
+  init: function () {
   },
 
-  close: function (document, data, globalObject) {
+  close: function (document, data) {
     const autoUpdate = document.getElementById('autoUpdate').value
     data.autoUpdate = Boolean(autoUpdate === 'true')
   },
@@ -49,7 +49,7 @@ module.exports = {
     const fs = require('fs')
     const path = require('path')
     DBM.Actions.Canvas.version = this.version
-    const Extension = JSON.parse(fs.readFileSync(path.join('data', 'settings.json')))['Canvas Auto Update']
+    const Extension = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'data', 'settings.json')))['Canvas Auto Update']
     const updateFiles = []
     const api = 'https://api.github.com/repos/'
     const repository = 'LeonZ2019/dbm-canvas'
@@ -93,14 +93,15 @@ module.exports = {
     }
     async function update (json) {
       console.log(chalk.hex('#7FFF7F')(`Updating to GitHub ${repository} v ${json.tag_name}`))
-      if (fs.existsSync('./_temp')) {
-        fs.rmdirSync('./_temp', { recursive: true })
+      const temp = path.join(process.cwd(), '_temp')
+      if (fs.existsSync(temp)) {
+        fs.rmdirSync(temp, { recursive: true })
       }
-      fs.mkdirSync('./_temp')
+      fs.mkdirSync(temp)
       const zip = await fetch(json.zipball_url)
-      zip.body.pipe(unzip.Extract({ path: './_temp' }))
+      zip.body.pipe(unzip.Extract({ path: temp }))
       zip.body.on('end', async () => {
-        const cwd = path.join('./_temp', fs.readdirSync('./_temp')[0])
+        const cwd = path.join(temp, fs.readdirSync(temp)[0])
         const files = fs.readdirSync(cwd)
         files.forEach(file => {
           const filePath = path.join(cwd, file)
@@ -117,7 +118,7 @@ module.exports = {
           this[action.name] = action.action
           action.mod(DBM)
         })
-        fs.rmdirSync('./_temp', { recursive: true })
+        fs.rmdirSync(temp, { recursive: true })
         console.log(chalk.hex('#7FFF7F')(`Canvas mod updated to version ${json.tag_name}`))
       })
     }
