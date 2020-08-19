@@ -25,13 +25,10 @@
 ## Installation Guide
 - Download the release from [here](https://github.com/LeonZ2019/dbm-canvas/releases)
 - Extract files and folder to your bot's directory actions folder
-- Linux user please download WebP release [here](https://developers.google.com/speed/webp/docs/precompiled)
-- Linux user please check [this](https://github.com/Intervox/node-webp) `cwebp` installation if still failed on creating image for .webp format
 
 ## NPM Module Required
 - Basic Section
  - [x] canvas
- - [x] cwebp
  - [x] glob
  - [x] node-fetch
  - [x] chalk
@@ -135,6 +132,7 @@ Control image function includes resize or scale, flip and rotate
   - [Integer | String] **`flip`** Flip image with 3 possible way, `0` - `3` or `horizontal`, `vertical` and `diagonal`
   - [Integer] **`rotate`** Rotate the image, the width and the height will auto change to size after rotate
   - [Integer | String] **`resampling`** Resize image with resample method, exist value is `0` to `2` or `'good'` | `'bilinear'`, `'best'` | `'bicubic'`, `'fast'` | `'nearest'`
+  - [Integer | String] **`opacity`** Control image opacity with value `50%` for global opacity or use number between `1` to `255` for each pixel opacity
 ```js
 this.Canvas.controlImage(img, { resize: { width: 500, aspectRatio: true }, rotate: 90 })
 ```
