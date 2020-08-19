@@ -9,7 +9,7 @@ module.exports = {
     return `${storeTypes[parseInt(data.storage)]} (${data.varName})`
   },
 
-  fields: ['storage', 'varName', 'mirror', 'rotation', 'width', 'height', 'resampling'],
+  fields: ['storage', 'varName', 'mirror', 'rotation', 'width', 'height', 'resampling', 'opacity'],
 
   html: function (isEvent, data) {
     return `
@@ -59,6 +59,10 @@ module.exports = {
         <option value="2">Nearest</option>
       </select>
     </div>
+    <div style="float: right; width: 50%;">
+      Opacity:<br>
+      <input id="opacity" class="round" type="text" value="100%"><br>
+    </div>
   </div>`
   },
 
@@ -84,6 +88,8 @@ module.exports = {
     if (scalex || scaley) options.resize = {}
     if (scalex) options.resize.width = scalex
     if (scaley) options.resize.height = scaley
+    const opacity = this.evalMessage(data.opacity, cache)
+    if (opacity) options.opacity = opacity
     try {
       const result = this.Canvas.controlImage(dataUrl, options)
       this.storeValue(result, storage, varName, cache)
@@ -198,6 +204,17 @@ module.exports = {
         for (let i = 0; i < images.length; i++) {
           ctx.clearRect(imageWidth / 2, imageHeight / 2, canvas.width, canvas.height)
           ctx.drawImage(images[i], -dataUrl.width / 2, -dataUrl.height / 2)
+          if (options.opacity) {
+            const imagedata = ctx.getImageData(0, 0, canvas.width, canvas.height)
+            for (let i = 3; i < imagedata.data.length; i += 4) {
+              if (!isNaN(options.opacity)) {
+                imagedata.data[i] = Math.min(Math.max(Number(options.opacity), 0), 255)
+              } else if (options.opacity.endsWith('%')) {
+                imagedata.data[i] = imagedata.data[i] * parseInt(options.opacity) / 100
+              }
+            }
+            ctx.putImageData(imagedata, 0, 0)
+          }
           dataUrl.images.push(canvas.toDataURL('image/png'))
         }
         dataUrl.width = imageWidth
@@ -205,9 +222,19 @@ module.exports = {
         return dataUrl
       } else {
         ctx.drawImage(image, -image.width / 2, -image.height / 2)
+        if (options.opacity) {
+          const imagedata = ctx.getImageData(0, 0, canvas.width, canvas.height)
+          for (let i = 3; i < imagedata.data.length; i += 4) {
+            if (!isNaN(options.opacity)) {
+              imagedata.data[i] = Math.min(Math.max(Number(options.opacity), 0), 255)
+            } else if (options.opacity.endsWith('%')) {
+              imagedata.data[i] = imagedata.data[i] * parseInt(options.opacity) / 100
+            }
+          }
+          ctx.putImageData(imagedata, 0, 0)
+        }
         return canvas.toDataURL('image/png')
       }
     }
   }
-
 }
