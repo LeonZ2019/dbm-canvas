@@ -129,7 +129,7 @@ module.exports = {
         options.color = '#000000'
       } else {
         if (typeof options.color === 'number') options.color = options.color.toString()
-        const match = options.color.match(new RegExp('[0-9a-fA-F]{6}', 'g'))
+        const match = options.color.match(/[0-9a-fA-F]{6}/g)
         if (match !== null) {
           options.color = '#' + match[0].toUpperCase()
         } else {
@@ -160,12 +160,6 @@ module.exports = {
       ctx.font = `${font.names.fontSubfamily.en} ${options.size}px "${font.names.postScriptName.en}"`
       ctx.fillStyle = options.color
       switch (options.align) {
-        case 0:
-        case 'TL':
-        default:
-          ctx.textBaseline = 'hanging'
-          ctx.textAlign = 'left'
-          break
         case 1:
         case 'TC':
           ctx.textBaseline = 'hanging'
@@ -205,6 +199,12 @@ module.exports = {
         case 'BR':
           ctx.textBaseline = 'alphabetic'
           ctx.textAlign = 'right'
+          break
+        case 0:
+        case 'TL':
+        default:
+          ctx.textBaseline = 'hanging'
+          ctx.textAlign = 'left'
           break
       }
       if (options.autoWrap) {

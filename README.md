@@ -32,6 +32,7 @@
  - [x] glob
  - [x] node-fetch
  - [x] chalk
+ - [x] chart.js
 - GIF Section
  - [x] pixel-gif
 - Font Section
@@ -55,6 +56,7 @@
 * [Filter Image](#filter-image)
 * [Generate Progress Bar](#generate-progress-bar)
 * [Image Recognize](#image-recognize)
+* [Generate Graph](#generate-graph)
 ### Others
 * [Image Buffer](#image-buffer)
 * [GIF Image Buffer](#gif-image-buffer)
@@ -215,6 +217,29 @@ Text recognize from tesseract.js
 this.Canvas.Recognize(img, { left: 0, top: 0, width: 200, height: 200, lang: 'eng', offset: 5, offsetType: 'pixel', max: 3, forceMax: false, acceptRange: 80, forceAccept: true, debug: false })
 ```
 
+## Generate Graph
+```js
+DBM.Actions.Canvas.generateChart(type, width, height, title, labels, data, sort, bgColor, bgColorAlpha, borderWidth, borderColor, borderColorAlpha, options) => [Image]
+```
+Generate many type of graph with chart.js
+- [String] **`type`** Type of graph, value should be '`line`', `'bar'`, '`horizontalBar`', '`radar`', '`pie`', '`doughnut`' and '`polarArea`'
+- [Integer] **`width`** Width for the image
+- [Integer] **`height`** Height for the image
+- [String] **`title`** Title of the graph
+- [Array] **`labels`** An array of all labels, example `['bar1', 'bar2', 'bar3']`
+- [Array] **`data`** An array of all data, example `[10,20,30]`
+- [Integer] **`sort`** Sort for result, value should be `0`, `1` or `2`
+- [String] **`bgColor`** Color of the object, example `'222831,00adb5,eeeeee'`
+- [Integer] **`bgColorAlpha`** Control object's opacity with value between `0` to `1`
+- [Integer] **`borderWidth`** Border's width of the object
+- [String] **`borderColor`** Border's color of the object, example `'222831,00adb5,eeeeee'`
+- [Integer] **`borderColorAlpha`** Control border object's opacity with value between `0` to `1`
+- [Object] **`option`** Please check at [Chart.js](https://www.chartjs.org/)
+
+```js
+this.Canvas.generateChart('bar', 800, 400, 'Score', ['Team Red', 'Team Blue', 'Team Green'], [33, 66, 99], 2, , 0.1, 1, , 1, {})
+```
+
 ## Image Buffer
 ```js
 DBM.Actions.Canvas.toBuffer(img) => [Buffer]
@@ -303,3 +328,4 @@ const image = await this.Canvas.bridge(img, 0)
 14. Canvas Send Image
 15. Canvas Set Gif Option
 16. Store Canvas Info
+16. Canvas Generate Graph

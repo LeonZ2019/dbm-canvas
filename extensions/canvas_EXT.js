@@ -57,10 +57,7 @@ module.exports = {
     if (Extension.customData && Extension.customData['Canvas Auto Update'] && Extension.customData['Canvas Auto Update'].autoUpdate === true) {
       const res = await fetch(api + repository + release)
       const json = await res.json()
-      if (json.message) {
-        console.log(chalk.hex('#FFFF7F')('Canvas mod release not found.'))
-        return
-      }
+      if (json.message) return console.log(chalk.hex('#FFFF7F')('Canvas mod release not found.'))
       const current = getVersion(this.version)
       const latest = getVersion(json.tag_name)
       if (latest.major > current.major) {

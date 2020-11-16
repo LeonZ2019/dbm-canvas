@@ -213,9 +213,7 @@ module.exports = {
       const data = []
       for (let i = 0; i < options.max; i++) {
         const result = await worker.recognize(img, { rectangle: options.rectangles[i] })
-        if (options.debug) {
-          console.log(`rectangle ${i + 1} ${JSON.stringify(options.rectangles[i])}, confidence is ${result.data.confidence} and result is ${JSON.stringify(result.data.text)}`)
-        }
+        if (options.debug) console.log(`rectangle ${i + 1} ${JSON.stringify(options.rectangles[i])}, confidence is ${result.data.confidence} and result is ${JSON.stringify(result.data.text)}`)
         data.push(result.data)
         if (!options.forceMax && result.data.confidence >= options.acceptRange) {
           if (options.debug) console.log('Perfect result found, stop looping now')
@@ -229,9 +227,7 @@ module.exports = {
         if (options.debug) console.log(result.text)
         return result.text
       } else {
-        if (options.debug) {
-          console.log(`Force accept's value is ${options.forceAccept}. Max confidence for all result is ${max} and accept range is above ${options.acceptRange}`)
-        }
+        if (options.debug) console.log(`Force accept's value is ${options.forceAccept}. Max confidence for all result is ${max} and accept range is above ${options.acceptRange}`)
       }
     }
   }

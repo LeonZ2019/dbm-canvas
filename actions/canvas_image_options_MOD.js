@@ -179,12 +179,6 @@ module.exports = {
       const ctx = canvas.getContext('2d')
       if (!options.resampling) options.resampling = 0
       switch (options.resampling) {
-        default:
-        case 0:
-        case 'good':
-        case 'bilinear':
-          ctx.patternQuality = 'good'
-          break
         case 1:
         case 'best':
         case 'bicubic':
@@ -194,6 +188,12 @@ module.exports = {
         case 'fast':
         case 'nearest':
           ctx.patternQuality = 'fast'
+          break
+        case 0:
+        case 'good':
+        case 'bilinear':
+        default:
+          ctx.patternQuality = 'good'
           break
       }
       ctx.translate(imageWidth / 2, imageHeight / 2)

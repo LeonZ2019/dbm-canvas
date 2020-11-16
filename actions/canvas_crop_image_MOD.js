@@ -145,10 +145,6 @@ module.exports = {
       }
       let x, y
       switch (options.align) {
-        case 0: case 'TL': default:
-          x = 0
-          y = 0
-          break
         case 1: case 'TC':
           x = (options.width / 2) - (image.width / 2)
           y = 0
@@ -220,6 +216,10 @@ module.exports = {
               y = -(options.y - options.height)
               break
           }
+          break
+        case 0: case 'TL': default:
+          x = 0
+          y = 0
           break
       }
       const canvas = this.CanvasJS.createCanvas(parseFloat(options.width), parseFloat(options.height))

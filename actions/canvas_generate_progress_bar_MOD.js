@@ -118,11 +118,11 @@ module.exports = {
     DBM.Actions.Canvas.generateProgress = function ({ type, width, height }, lineCap, lineWidth, percent, color) {
       let canvas
       switch (type) {
-        case 0: default: case 'normal': case 'basic':
-          canvas = this.CanvasJS.createCanvas(width, height)
-          break
         case 1: case 'circle':
           canvas = this.CanvasJS.createCanvas(height, height)
+          break
+        case 0: case 'normal': case 'basic': default:
+          canvas = this.CanvasJS.createCanvas(width, height)
           break
       }
       const ctx = canvas.getContext('2d')
@@ -137,7 +137,12 @@ module.exports = {
       ctx.lineWidth = lineWidth
       ctx.beginPath()
       switch (type) {
-        case 0: default: case 'normal': case 'basic':
+        case 1: case 'circle':
+          ctx.translate(canvas.height / 2, canvas.height / 2)
+          ctx.rotate(-0.5 * Math.PI)
+          ctx.arc(0, 0, width, 0, Math.PI * 2 * percent / 100, false)
+          break
+        case 0: case 'normal': case 'basic': default:
           switch (lineCap) {
             case 0: case 'square':
               ctx.moveTo(0, canvas.height / 2)
@@ -162,11 +167,6 @@ module.exports = {
               break
             }
           }
-          break
-        case 1: case 'circle':
-          ctx.translate(canvas.height / 2, canvas.height / 2)
-          ctx.rotate(-0.5 * Math.PI)
-          ctx.arc(0, 0, width, 0, Math.PI * 2 * percent / 100, false)
           break
       }
       ctx.stroke()
