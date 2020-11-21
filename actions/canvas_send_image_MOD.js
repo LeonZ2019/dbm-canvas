@@ -15,68 +15,111 @@ module.exports = {
     return ([data.varName3, 'Message Object'])
   },
 
-  fields: ['storage', 'varName', 'channel', 'varName2', 'message', 'spoiler', 'storage2', 'varName3', 'imgName'],
+  fields: ['storage', 'varName', 'channel', 'varName2', 'sendOrReply', 'pingingAuthor', 'replyingMessage', 'replyingVarName', 'message', 'spoiler', 'storage2', 'varName3', 'imgName'],
 
   html: function (isEvent, data) {
     return `
-  <div>
-    <div style="float: left; width: 35%;">
-      Source Image:<br>
-      <select id="storage" class="round">
-        ${data.variables[1]}
-      </select>
+  <div style="width: 550px; height: 350px; overflow-y: scroll;">
+    <div>
+      <div style="float: left; width: 35%;">
+        Source Image:<br>
+        <select id="storage" class="round">
+          ${data.variables[1]}
+        </select>
+      </div>
+      <div style="float: right; width: 60%;">
+        Variable Name:<br>
+        <input id="varName" class="round" type="text" list="variableList"><br>
+      </div>
+    </div><br><br><br>
+    <div style="padding-top: 8px;">
+      <div style="float: left; width: 35%;">
+        Send To:<br>
+        <select id="channel" class="round" onchange="glob.sendTargetChange(this, 'varNameContainer')">
+          ${data.sendTargets[isEvent ? 1 : 0]}
+        </select>
+      </div>
+      <div id="varNameContainer" style="display: none; float: right; width: 60%;">
+        Variable Name:<br>
+        <input id="varName2" class="round" type="text" list="variableList"><br>
+      </div>
+    </div><br><br><br>
+    <div style="padding-top: 8px;">
+      <div id="sendReply" style="float: left; width: 60%;">
+        Action Type:<br>
+        <select id="sendOrReply" class="round" onchange="glob.pingAuthor(this)">
+          <option value="send" selected>Send</option>
+          <option value="reply">Reply</option>
+        </select>
+      </div>
+      <div id="pingAuthor" style="padding-left: 3%; float: left; width: 35%;">
+        Ping Author:<br>
+        <select id="pingingAuthor" class="round">
+          <option value="1" selected>True</option>
+          <option value="0">False</option>
+        </select>
+      </div>
+    </div><br><br><br>
+    <div id="replyMessage" style="padding-top: 8px;">
+      <div style="float: left; width: 35%;">
+        Replying Message:<br>
+        <select id="replyingMessage" class="round" onchange="glob.messageChange(this, 'replyMsgContainer')">
+          ${data.messages[isEvent ? 1 : 0]}
+        </select>
+      </div>
+      <div id="replyMsgContainer" style="display: none; float: right; width: 60%;">
+        Variable Name:<br>
+        <input id="replyingVarName" class="round" type="text" list="variableList">
+      </div><br><br><br>
     </div>
-    <div style="float: right; width: 60%;">
-      Variable Name:<br>
-      <input id="varName" class="round" type="text" list="variableList"><br>
-    </div>
-  </div><br><br><br>
-  <div style="padding-top: 8px;">
-    <div style="float: left; width: 35%;">
-      Send To:<br>
-      <select id="channel" class="round" onchange="glob.sendTargetChange(this, 'varNameContainer')">
-        ${data.sendTargets[isEvent ? 1 : 0]}
-      </select>
-    </div>
-    <div id="varNameContainer" style="display: none; float: right; width: 60%;">
-      Variable Name:<br>
-      <input id="varName2" class="round" type="text" list="variableList"><br>
-    </div>
-  </div><br><br><br>
-  <div style="padding-top: 8px;">
-    Message:<br>
-    <textarea id="message" rows="2" placeholder="Insert message here..." style="width: 94%"></textarea>
-  </div><br>
-  <div style="padding-top: 8px;">
-    <div style="float: left; width: 44%;">
-      Image Spoiler:<br>
-      <select id="spoiler" class="round">
-        <option value="0" selected>No</option>
-        <option value="1">Yes</option>
-      </select><br>
-    </div>
-    <div style="padding-left: 5%; float: left; width: 50%;">
-      Image Name (Without extension):<br>
-      <input id="imgName" class="round" type="text" value="image"><br>
-    </div>
-  </div><br><br>
-  <div>
-    <div style="float: left; width: 35%;">
-      Store In:<br>
-      <select id="storage2" class="round" onchange="glob.variableChange(this, 'varNameContainer2')">
-        ${data.variables[0]}
-      </select>
-    </div>
-    <div id="varNameContainer2" style="display: none; float: right; width: 60%;">
-      Variable Name:<br>
-      <input id="varName3" class="round" type="text">
+    <div style="padding-top: 8px;">
+      Message:<br>
+      <textarea id="message" rows="2" placeholder="Insert message here..." style="width: 94%"></textarea>
+    </div><br>
+    <div style="padding-top: 8px;">
+      <div style="float: left; width: 44%;">
+        Image Spoiler:<br>
+        <select id="spoiler" class="round">
+          <option value="0" selected>No</option>
+          <option value="1">Yes</option>
+        </select><br>
+      </div>
+      <div style="padding-left: 5%; float: left; width: 50%;">
+        Image Name (Without extension):<br>
+        <input id="imgName" class="round" type="text" value="image"><br>
+      </div>
+    </div><br><br>
+    <div>
+      <div style="float: left; width: 35%;">
+        Store In:<br>
+        <select id="storage2" class="round" onchange="glob.variableChange(this, 'varNameContainer2')">
+          ${data.variables[0]}
+        </select>
+      </div>
+      <div id="varNameContainer2" style="display: none; float: right; width: 60%;">
+        Variable Name:<br>
+        <input id="varName3" class="round" type="text">
+      </div>
     </div>
   </div>`
   },
 
   init: function () {
     const { glob, document } = this
+    const pingAuthor = document.getElementById('pingAuthor')
+    const replyMessage = document.getElementById('replyMessage')
     glob.sendTargetChange(document.getElementById('channel'), 'varNameContainer')
+    glob.pingAuthor = function () {
+      if (document.getElementById('sendOrReply').value === 'send') {
+        pingAuthor.style.display = 'none'
+        replyMessage.style.display = 'none'
+      } else {
+        pingAuthor.style.display = null
+        replyMessage.style.display = null
+      }
+    }
+    glob.pingAuthor()
+    glob.messageChange(document.getElementById('replyingMessage'), 'replyMsgContainer')
     glob.variableChange(document.getElementById('storage2'), 'varNameContainer2')
   },
 
@@ -90,9 +133,10 @@ module.exports = {
       this.callNextAction(cache)
       return
     }
+    const content = this.evalMessage(data.message, cache)
     const channel = parseInt(data.channel)
     const varName2 = this.evalMessage(data.varName2, cache)
-    const target = this.getSendTarget(channel, varName2, cache)
+    const targetChannel = this.getSendTarget(channel, varName2, cache)
     let name = this.evalMessage(data.imgName, cache)
     if (dataUrl.animated) {
       name += '.gif'
@@ -102,9 +146,24 @@ module.exports = {
     if (parseInt(data.spoiler) === 1) name = `SPOILER_${name}`
     try {
       const attachment = await this.Canvas.toAttachment(dataUrl, name)
-      if (target && target.send) {
-        const content = this.evalMessage(data.message, cache)
-        const message = await target.send(content === '' ? '' : content, attachment)
+      let message
+      if (data.sendOrReply === 'send') {
+        if (targetChannel && targetChannel.send) message = await targetChannel.send(content === '' ? '' : content, attachment)
+      } else if (data.sendOrReply === 'reply') {
+        const msg = parseInt(data.replyingMessage)
+        const varName2 = this.evalMessage(data.replyingVarName, cache)
+        const replyMessage = this.getMessage(msg, varName2, cache)
+        const messageOptions = { files: [attachment] }
+        if (!parseInt(data.pingingAuthor)) messageOptions.allowedMentions = { repliedUser: false }
+        if (targetChannel && replyMessage && replyMessage.reply) {
+          if (replyMessage.channel.id === targetChannel.id) {
+            message = await replyMessage.reply(content === '' ? '' : content, messageOptions)
+          } else {
+            this.Canvas.onError(data, cache, 'Reply message must be same channel as the target channel!')
+          }
+        }
+      }
+      if (message) {
         const storage2 = parseInt(data.storage2)
         if (storage2 !== 0) {
           const varName3 = this.evalMessage(data.varName3, cache)
