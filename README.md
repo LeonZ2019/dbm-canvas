@@ -25,6 +25,8 @@
 ## Installation Guide
 - Download the release from [here](https://github.com/LeonZ2019/dbm-canvas/releases)
 - Extract files and folder to your bot's directory actions folder
+- Install discord.js by `npm i discordjs/discord.js`
+- Install Node 14.x or higher for using reply inline function, must be using x64 for canvas functional
 
 ## NPM Module Required
 - Basic Section
