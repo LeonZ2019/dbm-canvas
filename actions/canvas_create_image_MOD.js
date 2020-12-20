@@ -98,16 +98,30 @@ module.exports = {
     DBM.Actions.Canvas = DBM.Actions.Canvas || {}
     const chalk = DBM.Actions.getMods().require('chalk')
     DBM.Actions.Canvas.onError = (data, cache, err) => {
-      const colors = ['#FF4C4C', '#FFFF7F']
+      const colors = ['#FF4C4C', '#FFFF7F', '00FF7F']
       if (data && cache) {
         const text = 'Canvas ' + DBM.Actions.getErrorString(data, cache)
         console.error(chalk.hex(colors[0])(text))
       }
-      console.error(err)
       if (err.message && err.message === 'Image given has not completed loading') {
+        console.error(chalk.hex(colors[0])(error))
         console.error(chalk.hex(colors[1])('Possible Solution: Canvas mod only made for canvas.'))
       } else if (err.message && err.message.endsWith('canvas.node')) {
-        console.error(chalk.hex(colors[1])(`Solution: Canvas could not load!!!\nPlease run the bot with command prompt and Node.js 64bit (Currently ${process.arch})`))
+        const commandExists = DBM.Actions.getMods().require('command-exists')
+        if (commandExists.sync('node')) {
+          const arch = require('child_process').execSync('node -p "process.arch"').toString()
+          if (arch === 'x64\n') {
+            console.log(chalk.hex(colors[2])(`Solved: Canvas changed node.js ${process.arch} to node.js x64`))
+            require('child_process').spawnSync('node', [process.argv[1]], { cwd: process.cwd(), stdio: [0, 1, 2] })
+            process.exit()
+          } else {
+            console.error(chalk.hex(colors[1])(`Solution: Please install node.js x64 (currently is ${process.arch}) to your system! Get download x64 here https://nodejs.org/en/download/`))
+          }
+        } else {
+          console.log('Node.js is not install on your system, please download here https://nodejs.org/en/download/')
+        }
+      } else {
+        console.error(chalk.hex(colors[0])(err))
       }
     }
     if (!DBM.Actions.Canvas.CanvasJS) {
