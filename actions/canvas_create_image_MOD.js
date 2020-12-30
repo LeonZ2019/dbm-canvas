@@ -98,7 +98,7 @@ module.exports = {
     DBM.Actions.Canvas = DBM.Actions.Canvas || {}
     const chalk = DBM.Actions.getMods().require('chalk')
     DBM.Actions.Canvas.onError = (data, cache, err) => {
-      const colors = ['#FF4C4C', '#FFFF7F', '00FF7F']
+      const colors = ['FF4C4C', 'FFFF7F', '00FF7F']
       if (data && cache) {
         const text = 'Canvas ' + DBM.Actions.getErrorString(data, cache)
         console.error(chalk.hex(colors[0])(text))
@@ -117,11 +117,11 @@ module.exports = {
           if (commandExists.sync('node')) {
             const arch = require('child_process').execSync('node -p "process.arch"').toString()
             if (arch === 'x64\n') {
-              console.log(chalk.hex(colors[2])(`Solved: Canvas changed node.js ${process.arch} to node.js x64`))
+              console.log(chalk.hex('00FF7F')(`Solved: Canvas changed node.js ${process.arch} to node.js x64`))
               require('child_process').spawnSync('node', [process.argv[1]], { cwd: process.cwd(), stdio: [0, 1, 2] })
               process.exit()
             } else {
-              console.error(chalk.hex(colors[1])(`Solution: Please install node.js x64 (currently is ${process.arch}) to your system! Get download 64-bit here https://nodejs.org/en/download/`))
+              console.error(chalk.hex('FFFF7F')(`Solution: Please install node.js x64 (currently is ${process.arch}) to your system! Get download 64-bit here https://nodejs.org/en/download/`))
             }
           } else {
             console.log('Node.js is not install on your system, please download here https://nodejs.org/en/download/')
