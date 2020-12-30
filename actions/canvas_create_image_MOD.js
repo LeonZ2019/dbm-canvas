@@ -104,29 +104,31 @@ module.exports = {
         console.error(chalk.hex(colors[0])(text))
       }
       if (err.message && err.message === 'Image given has not completed loading') {
-        console.error(chalk.hex(colors[0])(error))
+        console.error(chalk.hex(colors[0])(err))
         console.error(chalk.hex(colors[1])('Possible Solution: Canvas mod only made for canvas.'))
-      } else if (err.message && err.message.endsWith('canvas.node')) {
-        const commandExists = DBM.Actions.getMods().require('command-exists')
-        if (commandExists.sync('node')) {
-          const arch = require('child_process').execSync('node -p "process.arch"').toString()
-          if (arch === 'x64\n') {
-            console.log(chalk.hex(colors[2])(`Solved: Canvas changed node.js ${process.arch} to node.js x64`))
-            require('child_process').spawnSync('node', [process.argv[1]], { cwd: process.cwd(), stdio: [0, 1, 2] })
-            process.exit()
-          } else {
-            console.error(chalk.hex(colors[1])(`Solution: Please install node.js x64 (currently is ${process.arch}) to your system! Get download x64 here https://nodejs.org/en/download/`))
-          }
-        } else {
-          console.log('Node.js is not install on your system, please download here https://nodejs.org/en/download/')
-        }
       } else {
         console.error(chalk.hex(colors[0])(err))
       }
     }
     if (!DBM.Actions.Canvas.CanvasJS) {
       try {
-        DBM.Actions.Canvas.CanvasJS = DBM.Actions.getMods().require('canvas')
+        if (process.arch !== 'x64') {
+          const commandExists = DBM.Actions.getMods().require('command-exists')
+          if (commandExists.sync('node')) {
+            const arch = require('child_process').execSync('node -p "process.arch"').toString()
+            if (arch === 'x64\n') {
+              console.log(chalk.hex(colors[2])(`Solved: Canvas changed node.js ${process.arch} to node.js x64`))
+              require('child_process').spawnSync('node', [process.argv[1]], { cwd: process.cwd(), stdio: [0, 1, 2] })
+              process.exit()
+            } else {
+              console.error(chalk.hex(colors[1])(`Solution: Please install node.js x64 (currently is ${process.arch}) to your system! Get download 64-bit here https://nodejs.org/en/download/`))
+            }
+          } else {
+            console.log('Node.js is not install on your system, please download here https://nodejs.org/en/download/')
+          }
+        } else {
+          DBM.Actions.Canvas.CanvasJS = DBM.Actions.getMods().require('canvas')
+        }
       } catch (err) {
         DBM.Actions.Canvas.onError('', '', err)
       }
@@ -216,8 +218,8 @@ module.exports = {
             return await this.loadGif(files[0])
           } else if (extname.startsWith('.webp')) {
             const temp = fs.mkdtempSync(require('os').tmpdir() + Path.sep)
-            require('child_process').execSync(`${this.dependencies.dwebp} ${path} -quiet -o ${temp}${path.sep}temp.png`)
-            const img = 'data:image/png;base64,' + fs.readFileSync(`${temp}${path.sep}temp.gif`).toString('base64')
+            require('child_process').execSync(`"${this.dependencies.dwebp}" "${path}" -quiet -o "${temp}${Path.sep}temp.png"`)
+            const img = 'data:image/png;base64,' + fs.readFileSync(`${temp}${Path.sep}temp.png`).toString('base64')
             fs.rmdirSync(temp, { recursive: true })
             return img
           } else {
@@ -253,9 +255,9 @@ module.exports = {
         if (Path.extname(path).toLowerCase().startsWith('.webp')) {
           const res = await this.Fetch(path)
           const temp = fs.mkdtempSync(require('os').tmpdir() + Path.sep)
-          fs.writeFileSync(`${temp}${path.sep}temp.webp`, await res.buffer())
-          require('child_process').execSync(`${this.dependencies.dwebp} ${temp}${path.sep}temp.webp -quiet -o ${temp}${path.sep}temp.png`)
-          const img = 'data:image/png;base64,' + fs.readFileSync(`${temp}${path.sep}temp.gif`).toString('base64')
+          fs.writeFileSync(`${temp}${Path.sep}temp.webp`, await res.buffer())
+          require('child_process').execSync(`"${this.dependencies.dwebp}" "${temp}${Path.sep}temp.webp" -quiet -o "${temp}${Path.sep}temp.png"`)
+          const img = 'data:image/png;base64,' + fs.readFileSync(`${temp}${Path.sep}temp.png`).toString('base64')
           fs.rmdirSync(temp, { recursive: true })
           return img
         } else if (Path.extname(path).toLowerCase().startsWith('.gif')) {
