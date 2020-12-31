@@ -88,9 +88,7 @@ module.exports = {
   },
 
   mod: function (DBM) {
-    if (!DBM.Actions.Canvas.CanvasJS) {
-      DBM.Actions.Canvas.FilterJS = DBM.Actions.getMods().require('imagedata-filters')
-    }
+    if (!DBM.Actions.Canvas.FilterJS) DBM.Actions.Canvas.FilterJS = DBM.Actions.getMods().require('imagedata-filters')
     DBM.Actions.Canvas.FilterFN = function (imageData, type, value) {
       let imageData2
       switch (type) {

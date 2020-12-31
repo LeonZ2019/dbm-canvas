@@ -2,7 +2,7 @@ module.exports = {
 
   name: 'Canvas Auto Update',
 
-  version: '2.2.4',
+  version: '2.2.5',
 
   github: 'github.com/LeonZ2019',
 

@@ -143,7 +143,7 @@ module.exports = {
         while (frameName.length !== frameLength) frameName = '0' + frameName
         fs.writeFileSync(`${temp}${path.sep}image${frameName}.png`, buffer)
       }
-      require('child_process').execSync(`${this.dependencies.gifski} --quiet ${(dataUrl.loopCount !== 0) ? '--once' : ''} --fps ${Math.round(1000 / dataUrl.delay)} -o ${temp}${path.sep}temp.gif ${temp}${path.sep}image*.png`)
+      require('child_process').execSync(`"${this.dependencies.gifski}" --quiet ${(dataUrl.loopCount !== 0) ? '--once' : ''} --fps ${Math.round(1000 / dataUrl.delay)} -o "${temp}${path.sep}temp.gif" "${temp}${path.sep}image*.png"`)
       const buffer = fs.readFileSync(`${temp}${path.sep}temp.gif`)
       fs.rmdirSync(temp, { recursive: true })
       return buffer
