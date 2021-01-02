@@ -115,7 +115,7 @@ module.exports = {
         if (dataUrl.animated) {
           result = dataUrl.width
         } else {
-          const img = this.CanvasJS.loadImage(dataUrl)
+          const img = this.Canvas.loadImage(dataUrl)
           result = img.width
         }
         break
@@ -123,7 +123,7 @@ module.exports = {
         if (dataUrl.animated) {
           result = dataUrl.height
         } else {
-          const img = this.CanvasJS.loadImage(dataUrl)
+          const img = this.Canvas.loadImage(dataUrl)
           result = img.height
         }
         break
