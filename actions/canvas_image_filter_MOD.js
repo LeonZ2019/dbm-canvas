@@ -4,7 +4,7 @@ module.exports = {
 
   section: 'Image Editing',
 
-  subtitle: function (data) {
+  subtitle (data) {
     const storeTypes = ['', 'Temp Variable', 'Server Variable', 'Global Variable']
     const filter = ['Blur', 'Hue Rotate', 'Brightness', 'Contrast', 'Grayscale', 'Invert', 'Opacity', 'Saturate', 'Sepia']
     return `${storeTypes[parseInt(data.storage)]} (${data.varName}) -> ${filter[parseInt(data.info)]} (${data.value})`
@@ -12,7 +12,7 @@ module.exports = {
 
   fields: ['storage', 'varName', 'info', 'value'],
 
-  html: function (isEvent, data) {
+  html (isEvent, data) {
     return `
   <div>
     <div style="float: left; width: 45%;">
@@ -48,7 +48,7 @@ module.exports = {
   </div>`
   },
 
-  init: function () {
+  init () {
     const { glob, document } = this
 
     glob.refreshVariableList(document.getElementById('storage'))
@@ -66,12 +66,12 @@ module.exports = {
     glob.onChange1(document.getElementById('info'))
   },
 
-  action: function (cache) {
+  action (cache) {
     const data = cache.actions[cache.index]
     const storage = parseInt(data.storage)
     const varName = this.evalMessage(data.varName, cache)
-    const dataUrl = this.getVariable(storage, varName, cache)
-    if (!dataUrl) {
+    const sourceImage = this.getVariable(storage, varName, cache)
+    if (!sourceImage) {
       this.Canvas.onError(data, cache, 'Image not exist!')
       this.callNextAction(cache)
       return
@@ -79,7 +79,7 @@ module.exports = {
     const info = parseInt(data.info)
     const value = parseFloat(this.evalMessage(data.value, cache))
     try {
-      const image = this.Canvas.Filter(dataUrl, info, value)
+      const image = this.Canvas.Filter(sourceImage, info, value)
       this.storeValue(image, storage, varName, cache)
       this.callNextAction(cache)
     } catch (err) {
@@ -87,77 +87,63 @@ module.exports = {
     }
   },
 
-  mod: function (DBM) {
+  mod (DBM) {
     if (!DBM.Actions.Canvas.FilterJS) DBM.Actions.Canvas.FilterJS = DBM.Actions.getMods().require('imagedata-filters')
-    DBM.Actions.Canvas.FilterFN = function (imageData, type, value) {
-      let imageData2
+    DBM.Actions.Canvas.filterFnc = function (imageData, type, value) {
+      let filtered
       switch (type) {
         case 0: case 'blur':
-          value = (value / 100).toString()
-          imageData2 = this.FilterJS.blur(imageData, { amount: value })
+          filtered = this.FilterJS.blur(imageData, { amount: (value / 100).toString() })
           break
         case 1: case 'huerotate':
-          value = (value / 180 * Math.PI).toString()
-          imageData2 = this.FilterJS.hueRotate(imageData, { amount: value })
+          filtered = this.FilterJS.hueRotate(imageData, { amount: (value / 180 * Math.PI).toString() })
           break
         case 2: case 'brightness':
-          value = ((100 - value) / 100).toString()
-          imageData2 = this.FilterJS.brightness(imageData, { amount: value })
+          filtered = this.FilterJS.brightness(imageData, { amount: ((100 - value) / 100).toString() })
           break
         case 3: case 'contrast':
-          value = ((100 - value) / 100).toString()
-          imageData2 = this.FilterJS.contrast(imageData, { amount: value })
+          filtered = this.FilterJS.contrast(imageData, { amount: ((100 - value) / 100).toString() })
           break
         case 4: case 'grayscale':
-          value = (value / 100).toString()
-          imageData2 = this.FilterJS.grayscale(imageData, { amount: value })
+          filtered = this.FilterJS.grayscale(imageData, { amount: (value / 100).toString() })
           break
         case 5: case 'invert':
-          value = (value / 100).toString()
-          imageData2 = this.FilterJS.invert(imageData, { amount: value })
+          filtered = this.FilterJS.invert(imageData, { amount: (value / 100).toString() })
           break
         case 6: case 'opacity':
-          value = ((100 - value) / 100).toString()
-          imageData2 = this.FilterJS.opacity(imageData, { amount: value })
+          filtered = this.FilterJS.opacity(imageData, { amount: ((100 - value) / 100).toString() })
           break
         case 7: case 'saturate':
-          value = ((100 - value) / 100).toString()
-          imageData2 = this.FilterJS.saturate(imageData, { amount: value })
+          filtered = this.FilterJS.saturate(imageData, { amount: ((100 - value) / 100).toString() })
           break
         case 8: case 'sepia':
-          value = (value / 100).toString()
-          imageData2 = this.FilterJS.sepia(imageData, { amount: value })
+          filtered = this.FilterJS.sepia(imageData, { amount: (value / 100).toString() })
+          break
       }
-      return imageData2
+      return filtered
     }
-    DBM.Actions.Canvas.Filter = function (dataUrl, type, value) {
-      let image = this.loadImage(dataUrl)
+    DBM.Actions.Canvas.Filter = function (sourceImage, type, value) {
+      let image = this.loadImage(sourceImage)
       let images
-      if (dataUrl.animated) {
+      if (sourceImage.animated) {
         images = image
         image = images[0]
       }
       if (typeof type === 'string') type = type.toLowerCase()
-      const canvas = this.CanvasJS.createCanvas(image.width, image.height)
-      const ctx = canvas.getContext('2d')
-      if (dataUrl.animated) {
-        dataUrl.images = []
+      const { width, height } = image
+      if (sourceImage.animated) {
+        const tempImgs = []
         for (let i = 0; i < images.length; i++) {
-          ctx.clearRect(0, 0, canvas.width, canvas.height)
-          ctx.drawImage(images[i], 0, 0)
-          const imageData = ctx.getImageData(0, 0, image.width, image.height)
-          const imageData2 = this.FilterFN(imageData, type, value)
-          ctx.putImageData(imageData2, 0, 0)
-          dataUrl.images.push(canvas.toDataURL('image/png'))
+          const imgData = this.getImageData(image[i], 0, 0, width, height)
+          const imgDataFiltered = this.filterFnc(imgData, type, value)
+          tempImgs.push(this.putImageData(imgDataFiltered, 0, 0, width, height))
         }
-        return dataUrl
+        return new this.Image(tempImgs, sourceImage)
       } else {
-        ctx.drawImage(image, 0, 0)
-        const imageData = ctx.getImageData(0, 0, image.width, image.height)
-        const imageData2 = this.FilterFN(imageData, type, value)
-        ctx.putImageData(imageData2, 0, 0)
-        return canvas.toDataURL('image/png')
-      };
+        const imgData = this.getImageData(image, 0, 0, width, height)
+        const imgDataFiltered = this.filterFnc(imgData, type, value)
+        return this.putImageData(imgDataFiltered, 0, 0, width, height)
+      }
     }
   }
 

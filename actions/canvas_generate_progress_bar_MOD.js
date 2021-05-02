@@ -4,14 +4,14 @@ module.exports = {
 
   section: 'Image Editing',
 
-  subtitle: function (data) {
+  subtitle (data) {
     const storeTypes = ['', 'Temp Variable', 'Server Variable', 'Global Variable']
     const type = ['Basic', 'Circle']
     const index = parseInt(data.type)
     return `Generate ${type[index]} Progress Bar ${storeTypes[parseInt(data.storage)]} (${data.varName})`
   },
 
-  variableStorage: function (data, varType) {
+  variableStorage (data, varType) {
     const type = parseInt(data.storage)
     if (type !== varType) return
     return ([data.varName, 'Image'])
@@ -19,7 +19,7 @@ module.exports = {
 
   fields: ['storage', 'varName', 'type', 'width', 'height', 'lineWidth', 'lineCap', 'percent', 'color'],
 
-  html: function (isEvent, data) {
+  html (isEvent, data) {
     return `
   <div style="padding-top: 8px;">
     <div style="float: left; width: 45%;">
@@ -77,7 +77,7 @@ module.exports = {
   </div>`
   },
 
-  init: function () {
+  init () {
     const { glob, document } = this
 
     glob.onChange1 = function (event) {
@@ -94,7 +94,7 @@ module.exports = {
     glob.onChange1(document.getElementById('type'))
   },
 
-  action: function (cache) {
+  action (cache) {
     const data = cache.actions[cache.index]
     const storage = parseInt(data.storage)
     const varName = this.evalMessage(data.varName, cache)
@@ -114,7 +114,7 @@ module.exports = {
       this.Canvas.onError(data, cache, err)
     }
   },
-  mod: function (DBM) {
+  mod (DBM) {
     DBM.Actions.Canvas.generateProgress = function ({ type, width, height }, lineCap, lineWidth, percent, color) {
       let canvas
       switch (type) {
@@ -170,7 +170,7 @@ module.exports = {
           break
       }
       ctx.stroke()
-      return canvas.toDataURL('image/png')
+      return new this.Image(canvas.toDataURL('image/png'))
     }
   }
 }

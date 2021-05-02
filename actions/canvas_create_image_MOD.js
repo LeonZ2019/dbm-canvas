@@ -4,11 +4,11 @@ module.exports = {
 
   section: 'Image Editing',
 
-  subtitle: function (data) {
+  subtitle (data) {
     return `${data.url}`
   },
 
-  variableStorage: function (data, varType) {
+  variableStorage (data, varType) {
     const type = parseInt(data.storage)
     if (type !== varType) return
     return ([data.varName, 'Image'])
@@ -16,7 +16,7 @@ module.exports = {
 
   fields: ['url', 'type', 'loop', 'delay', 'storage', 'varName'],
 
-  html: function (isEvent, data) {
+  html (isEvent, data) {
     return `
   <div>
     <a id="link" href='#'>Local URL</a> / Web URL:<br>
@@ -56,7 +56,7 @@ module.exports = {
   </div>`
   },
 
-  init: function () {
+  init () {
     const { glob, document } = this
     document.getElementById('link').onclick = function () {
       require('child_process').execSync('start https://globster.xyz')
@@ -72,7 +72,7 @@ module.exports = {
     glob.onChange(document.getElementById('type'))
   },
 
-  action: async function (cache) {
+  async action (cache) {
     const data = cache.actions[cache.index]
     const type = parseInt(data.type)
     const loop = parseInt(this.evalMessage(data.loop, cache))
@@ -81,7 +81,7 @@ module.exports = {
     try {
       let image
       if (type !== 2) {
-        image = await this.Canvas.createImage(url, { loop: loop, delay: delay })
+        image = await this.Canvas.createImage(url, { loop, delay })
       } else {
         image = await this.Canvas.createImage(url)
       }
@@ -94,7 +94,7 @@ module.exports = {
     }
   },
 
-  mod: function (DBM) {
+  mod (DBM) {
     DBM.Actions.Canvas = DBM.Actions.Canvas || {}
     const chalk = DBM.Actions.getMods().require('chalk')
     DBM.Actions.Canvas.onError = (data, cache, err) => {
@@ -182,74 +182,215 @@ module.exports = {
       }
     }
     DBM.Actions.Canvas.loadDependencies()
-    DBM.Actions.Canvas.loadImage = function (dataUrl) {
-      if (dataUrl.animated) {
+    DBM.Actions.Canvas.JimpFnc = {
+      param0 (fncName) {
+        const jimp = DBM.Actions.Canvas.bridge(this, 1)
+        if (jimp.animated) {
+          for (let i = 0; i < jimp.totalFrames; i++) {
+            jimp.images[i][fncName]()
+          }
+        } else {
+          jimp[fncName]()
+        }
+        const canvas = DBM.Actions.Canvas.bridge(jimp, 0)
+        this.image = (jimp.animated) ? canvas.images : canvas.image
+      },
+      param1 (fncName, param1) {
+        const jimp = DBM.Actions.Canvas.bridge(this, 1)
+        if (jimp.animated) {
+          for (let i = 0; i < jimp.totalFrames; i++) {
+            jimp.images[i][fncName](param1)
+          }
+        } else {
+          jimp[fncName](param1)
+        }
+        const canvas = DBM.Actions.Canvas.bridge(jimp, 0)
+        this.image = (jimp.animated) ? canvas.images : canvas.image
+      },
+      param2 (fncName, param1, param2) {
+        const jimp = DBM.Actions.Canvas.bridge(this, 1)
+        if (jimp.animated) {
+          for (let i = 0; i < jimp.totalFrames; i++) {
+            jimp.images[i][fncName](param1, param2)
+          }
+        } else {
+          jimp[fncName](param1, param2)
+        }
+        const canvas = DBM.Actions.Canvas.bridge(jimp, 0)
+        this.image = (jimp.animated) ? canvas.images : canvas.image
+      },
+      param3 (fncName, param1, param2, param3) {
+        const jimp = DBM.Actions.Canvas.bridge(this, 1)
+        const jimp2 = DBM.Actions.Canvas.bridge(param1, 1)
+        if (jimp.animated) {
+          for (let i = 0; i < jimp.totalFrames; i++) {
+            jimp.images[i][fncName](jimp2, param2, param3)
+          }
+        } else {
+          jimp[fncName](jimp2, param2, param3)
+        }
+        const canvas = DBM.Actions.Canvas.bridge(jimp, 0)
+        this.image = (jimp.animated) ? canvas.images : canvas.image
+      },
+      param5 (param1, param2, param3, param4, param5) { // param 4 & 5
+        const jimp = DBM.Actions.Canvas.bridge(this, 1)
+        if (jimp.animated) {
+          for (let i = 0; i < jimp.totalFrames; i++) {
+            jimp.images[i].print(param1, param2, param3, param4, param5) // width auto convert to Infinity if undefined
+          }
+        } else {
+          jimp.image.print(param1, param2, param3, param4, param5)
+        }
+        const canvas = DBM.Actions.Canvas.bridge(jimp, 0)
+        this.image = (jimp.animated) ? canvas.images : canvas.image
+      },
+      getBuffer (cb) {
+        try {
+          if (typeof cb !== 'function') {
+            throw new Error('cb must be a function')
+          }
+          cb(null, DBM.Actions.Canvas.toBuffer(DBM.Actions.Canvas.bridge(this, 0)))
+        } catch (err) {
+          cb(err)
+        }
+      }
+    }
+
+    DBM.Images.drawImageOnImage = function (img1, img2, x, y) {
+      const jimp = DBM.Actions.Canvas.bridge(img1, 1)
+      const jimp2 = DBM.Actions.Canvas.bridge(img2, 1)
+      for (let i = 0; i < jimp2.bitmap.width; i++) {
+        for (let j = 0; j < jimp2.bitmap.height; j++) {
+          const pos = (i * (jimp2.bitmap.width * 4)) + (j * 4)
+          const pos2 = ((i + y) * (jimp.bitmap.width * 4)) + ((j + x) * 4)
+          const target = jimp.bitmap.data
+          const source = jimp2.bitmap.data
+          for (let k = 0; k < 4; k++) {
+            target[pos2 + k] = source[pos + k]
+          }
+        }
+      }
+      img1 = DBM.Actions.Canvas.bridge(jimp, 0)
+    }
+
+    DBM.Action.Canvas.JimpImage = function (canvas, images) { // mainly for gif
+      this.name = 'jimp'
+      this.extensions = ['.gif']
+      this.animated = true
+      this.images = images // will hold jimp object here
+      this.width = canvas.width
+      this.height = canvas.height
+      this.delay = canvas.delay // delay (fps)
+      this.loop = canvas.loop // loop type, once or forever
+      this.totalFrames = canvas.length
+    }
+
+    DBM.Actions.Canvas.Image = function (source, options) {
+      this.name = 'canvas'
+      if (Array.isArray(source)) {
+        this.extensions = ['.gif']
+        this.images = source
+        this.animated = true
+        this.width = options.width
+        this.height = options.height
+        this.delay = options.delay
+        this.loop = options.loop
+        this.totalFrames = source.length
+      } else {
+        this.extensions = ['.png', '.jpg', '.webp'] // sort by prefer
+        this.image = source
+        this.animated = false
+      }
+
+      // jimp fnc compability
+      this.greyscale = () => DBM.Actions.Canvas.JimpFnc.param0.call(this, 'greyscale')
+      this.invert = () => DBM.Actions.Canvas.JimpFnc.param0.call(this, 'invert')
+      this.normalize = () => DBM.Actions.Canvas.JimpFnc.param0.call(this, 'normalize')
+      this.opaque = () => DBM.Actions.Canvas.JimpFnc.param0.call(this, 'opaque')
+      this.sepia = () => DBM.Actions.Canvas.JimpFnc.param0.call(this, 'sepia')
+      this.dither565 = () => DBM.Actions.Canvas.JimpFnc.param0.call(this, 'dither565')
+
+      this.blur = (param1) => DBM.Actions.Canvas.JimpFnc.param1.call(this, 'blur', param1)
+      this.rotate = (param1) => DBM.Actions.Canvas.JimpFnc.param1.call(this, 'rotate', param1)
+
+      this.mirror = (param1, param2) => DBM.Actions.Canvas.JimpFnc.param2.call(this, 'mirror', param1, param2)
+      this.resize = (param1, param2) => DBM.Actions.Canvas.JimpFnc.param2.call(this, 'resize', param1, param2)
+
+      this.mask = (param1, param2, param3) => DBM.Actions.Canvas.JimpFnc.param3.call(this, 'mask', param1, param2, param3)
+      this.composite = (param1, param2, param3) => DBM.Actions.Canvas.JimpFnc.param3.call(this, 'composite', param1, param2, param3)
+
+      this.print = (param1, param2, param3, param4, param5) => DBM.Actions.Canvas.JimpFnc.param5.call(this, param1, param2, param3, param4, param5)
+
+      this.getBuffer = DBM.Actions.Canvas.JimpFnc.getBuffer
+    }
+
+    DBM.Actions.Canvas.loadImage = function (sourceImage, needConvert) {
+      if (needConvert) sourceImage = this.bridge(sourceImage, 1) // auto convert if it is jimp image
+      if (sourceImage.animated) {
         const images = []
-        for (let i = 0; i < dataUrl.images.length; i++) {
+        for (let i = 0; i < sourceImage.images.length; i++) {
           const image = new this.CanvasJS.Image()
-          image.src = dataUrl.images[i]
+          image.src = sourceImage.images[i]
           images.push(image)
         }
         return images
       } else {
         const image = new this.CanvasJS.Image()
-        image.src = dataUrl
+        image.src = sourceImage.image
         return image
       }
     }
+
     DBM.Actions.Canvas.createImage = async function (path, options) {
       const Path = require('path')
       const fs = require('fs')
       let type
-      try {
-        // eslint-disable-next-line no-new
-        new URL(path)
-        type = 'url'
-      } catch (err) {
+      if (options && !!options.isCache) {
         type = 'local'
+      } else {
+        try {
+          // eslint-disable-next-line no-new
+          new URL(path)
+          type = 'url'
+        } catch (err) {
+          type = 'local'
+        }
       }
       if (type === 'local') {
-        const files = this.Glob.sync(this.solvePath(path))
+        let files
+        if (options && !!options.isCache) {
+          files = this.Glob.sync(this.solvePath(path)).filter(file => ['.gif', '.webp', '.png', '.jpg'].includes(Path.extname(file).toLowerCase()))
+        } else {
+          files = [path]
+        }
         if (files.length === 0) {
           throw new Error('Image not exist!')
         } else if (files.length === 1) {
-          const extname = Path.extname(path)
+          const extname = Path.extname(files[0]).toLowerCase()
           if (extname.startsWith('.gif')) {
-            return await this.loadGif(files[0])
+            return new this.Image(await this.loadGif(files[0]))
           } else if (extname.startsWith('.webp')) {
             const temp = fs.mkdtempSync(require('os').tmpdir() + Path.sep)
-            require('child_process').execSync(`"${this.dependencies.dwebp}" "${path}" -quiet -o "${temp}${Path.sep}temp.png"`)
+            require('child_process').execSync(`"${this.dependencies.dwebp}" "${files[0]}" -quiet -o "${temp}${Path.sep}temp.png"`)
             const img = 'data:image/png;base64,' + fs.readFileSync(`${temp}${Path.sep}temp.png`).toString('base64')
             fs.rmdirSync(temp, { recursive: true })
-            return img
+            return new this.Image(img)
           } else {
-            if (!['.png', '.gif'].includes(extname)) {
-              throw new Error('Please provide valid image format.')
-            }
             const image = await this.CanvasJS.loadImage(files[0])
             const canvas = this.CanvasJS.createCanvas(image.width, image.height)
             const ctx = canvas.getContext('2d')
             ctx.drawImage(image, 0, 0)
-            return canvas.toDataURL('image/png')
+            const returnImg = canvas.toDataURL('image/png')
+            const width = image.width
+            const height = image.height
+            if (options && !!options.isCache) {
+              return { returnImg, width, height } // getting biggest dimension
+            } else {
+              return new this.Image(returnImg)
+            }
           }
         } else {
-          if (Path.extname(path) === '.gif') {
-            console.log('Multiple gif files found, auto choose for the first gif only.')
-            return await this.loadGif(files[0])
-          } else {
-            const Gif = {}
-            Gif.images = []
-            Gif.delay = (options && options.delay) ? options.delay : 100
-            Gif.loopCount = (options && options.loop) ? options.loop : 0
-            Gif.animated = true
-            for (let i = 0; i < files.length; i++) {
-              Gif.images.push(await this.createImage(files[i]))
-            }
-            const img = this.loadImage(Gif.images[0])
-            Gif.width = img.width
-            Gif.height = img.height
-            return Gif
-          }
+          return await this.loadGif(files, options)
         }
       } else if (type === 'url') {
         if (Path.extname(path).toLowerCase().startsWith('.webp')) {
@@ -259,41 +400,60 @@ module.exports = {
           require('child_process').execSync(`"${this.dependencies.dwebp}" "${temp}${Path.sep}temp.webp" -quiet -o "${temp}${Path.sep}temp.png"`)
           const img = 'data:image/png;base64,' + fs.readFileSync(`${temp}${Path.sep}temp.png`).toString('base64')
           fs.rmdirSync(temp, { recursive: true })
-          return img
-        } else if (Path.extname(path).toLowerCase().startsWith('.gif')) {
-          return await this.loadGif(path)
-        } else {
+          return new this.Image(img)
+        } else if (Path.extname(path).toLowerCase().startsWith('.gif')) { // need test for online .gif
+          return await this.loadGif(path) // weird maybe need download and createImage() again with cache
+        } else { // need test for online .jpg and .png
           const image = await this.CanvasJS.loadImage(path)
           const canvas = this.CanvasJS.createCanvas(image.width, image.height)
           const ctx = canvas.getContext('2d')
           ctx.drawImage(image, 0, 0)
-          return canvas.toDataURL('image/png')
+          return new this.Image(canvas.toDataURL('image/png'))
         }
       }
     }
 
-    DBM.Actions.Canvas.loadGif = async function (path) {
-      const images = await this.PixelGif.parse(path)
-      const canvas = this.CanvasJS.createCanvas(images[0].width, images[0].height)
-      const ctx = canvas.getContext('2d')
-      const imageData = ctx.getImageData(0, 0, images[0].width, images[0].height)
-      let i = 0
-      const Gif = {}
-      Gif.width = images[0].width
-      Gif.height = images[0].height
-      Gif.images = []
-      Gif.delay = images.map(i => i.delay).reduce((a, c) => a + c, 0) / images.length
-      Gif.loopCount = images.loopCount
-      Gif.animated = true
-      while (images[i] != null) {
-        for (let d = 0; d < images[i].data.length; d++) {
-          imageData.data[d] = images[i].data[d]
-        }
-        ctx.putImageData(imageData, 0, 0)
-        Gif.images.push(canvas.toDataURL('image/png'))
-        i++
+    DBM.Actions.Canvas.loadGif = async function (path, options) {
+      let images = []; let loop; let delay; let width; let height
+      if (Array.isArray(path)) {
+        console.log('Auto picked for the first image')
+        path = path[0] // autopick?
       }
-      return Gif
+      if (require('path').extname(path) === '.gif') {
+        const parsedGif = await this.PixelGif.parse(path)
+        const canvas = this.CanvasJS.createCanvas(parsedGif[0].width, parsedGif[0].height)
+        const ctx = canvas.getContext('2d')
+        let imageData = ctx.getImageData(0, 0, parsedGif[0].width, parsedGif[0].height)
+        const backupImageData = imageData
+        const tmpImages = (await this.PixelGif.parse(path)).filter(image => image != null)
+        for (let i = 0; i < tmpImages.length; i++) {
+          imageData = backupImageData
+          for (let d = 0; d < parsedGif[i].data.length; d++) {
+            imageData.data[d] = parsedGif[i].data[d]
+          }
+          ctx.putImageData(imageData, 0, 0)
+          images.push(canvas.toDataURL('image/png'))
+        }
+        delay = parsedGif.map(i => i.delay).reduce((a, c) => a + c, 0) / parsedGif.length
+        loop = (parsedGif.loop) ? parsedGif.loop : 0
+        width = parsedGif[0].width
+        height = parsedGif[0].height
+      } else {
+        images = []
+        const allWidth = []
+        const allHeight = []
+        for (let i = 0; i < path.length; i++) {
+          const image = await this.createImage(path[i], { isCache: true }) // made create image without research it again, minimize the time for function
+          images.push(image.returnImg)
+          allWidth.push(image.width)
+          allHeight.push(image.height)
+        }
+        delay = (options.delay) ? options.delay : 100 // default value (ms)
+        loop = (options.loop) ? options.loop : 0 // default value
+        width = Math.max(...allWidth)
+        height = Math.max(...allHeight)
+      }
+      return new this.Image(images, { delay, loop, width, height })
     }
   }
 }

@@ -4,14 +4,14 @@ module.exports = {
 
   section: 'Image Editing',
 
-  subtitle: function (data) {
+  subtitle (data) {
     const storeTypes = ['', 'Temp Variable', 'Server Variable', 'Global Variable']
     return `${storeTypes[parseInt(data.storage)]} (${data.varName})`
   },
 
   fields: ['storage', 'varName', 'mirror', 'rotation', 'width', 'height', 'resampling', 'opacity'],
 
-  html: function (isEvent, data) {
+  html (isEvent, data) {
     return `
   <div>
     <div style="float: left; width: 45%;">
@@ -66,15 +66,15 @@ module.exports = {
   </div>`
   },
 
-  init: function () {
+  init () {
   },
 
-  action: function (cache) {
+  action (cache) {
     const data = cache.actions[cache.index]
     const storage = parseInt(data.storage)
     const varName = this.evalMessage(data.varName, cache)
-    const dataUrl = this.getVariable(storage, varName, cache)
-    if (!dataUrl) {
+    const sourceImage = this.getVariable(storage, varName, cache)
+    if (!sourceImage) {
       this.Canvas.onError(data, cache, 'Image not exist!')
       this.callNextAction(cache)
       return
@@ -91,7 +91,7 @@ module.exports = {
     const opacity = this.evalMessage(data.opacity, cache)
     if (opacity) options.opacity = opacity
     try {
-      const result = this.Canvas.controlImage(dataUrl, options)
+      const result = this.Canvas.controlImage(sourceImage, options)
       this.storeValue(result, storage, varName, cache)
       this.callNextAction(cache)
     } catch (err) {
@@ -99,11 +99,11 @@ module.exports = {
     }
   },
 
-  mod: function (DBM) {
-    DBM.Actions.Canvas.controlImage = function (dataUrl, options) {
-      let image = this.loadImage(dataUrl)
+  mod (DBM) {
+    DBM.Actions.Canvas.controlImage = function (sourceImage, options) {
+      let image = this.loadImage(sourceImage)
       let images
-      if (dataUrl.animated) {
+      if (sourceImage.animated) {
         images = image
         image = image[0]
       }
@@ -199,11 +199,11 @@ module.exports = {
       ctx.translate(imageWidth / 2, imageHeight / 2)
       ctx.rotate(radian)
       ctx.scale(scaleWidth, scaleHeight)
-      if (dataUrl.animated) {
-        dataUrl.images = []
+      if (sourceImage.animated) {
+        const tempImages = []
         for (let i = 0; i < images.length; i++) {
           ctx.clearRect(imageWidth / 2, imageHeight / 2, canvas.width, canvas.height)
-          ctx.drawImage(images[i], -dataUrl.width / 2, -dataUrl.height / 2)
+          ctx.drawImage(images[i], -sourceImage.width / 2, -sourceImage.height / 2)
           if (options.opacity) {
             const imagedata = ctx.getImageData(0, 0, canvas.width, canvas.height)
             for (let i = 3; i < imagedata.data.length; i += 4) {
@@ -215,11 +215,11 @@ module.exports = {
             }
             ctx.putImageData(imagedata, 0, 0)
           }
-          dataUrl.images.push(canvas.toDataURL('image/png'))
+          tempImages.push(new this.Image(canvas.toDataURL('image/png')))
         }
-        dataUrl.width = imageWidth
-        dataUrl.height = imageHeight
-        return dataUrl
+        sourceImage.width = imageWidth
+        sourceImage.height = imageHeight
+        return new this.Image(tempImages, sourceImage)
       } else {
         ctx.drawImage(image, -image.width / 2, -image.height / 2)
         if (options.opacity) {
@@ -233,7 +233,7 @@ module.exports = {
           }
           ctx.putImageData(imagedata, 0, 0)
         }
-        return canvas.toDataURL('image/png')
+        return new this.Image(canvas.toDataURL('image/png'))
       }
     }
   }

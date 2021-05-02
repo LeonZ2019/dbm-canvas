@@ -4,13 +4,13 @@ module.exports = {
 
   section: 'Image Editing',
 
-  subtitle: function (data) {
+  subtitle (data) {
     return `${data.text}`
   },
 
   fields: ['storage', 'varName', 'x', 'y', 'fontPath', 'fontColor', 'fontSize', 'align', 'text', 'rotate', 'antialias', 'maxWidth', 'fillType', 'autoWrap'],
 
-  html: function (isEvent, data) {
+  html (isEvent, data) {
     return `
   <div style="width: 550px; height: 350px; overflow-y: scroll;">
     <div style="float: left; width: 50%;">
@@ -71,19 +71,19 @@ module.exports = {
   </div>`
   },
 
-  init: function () {
+  init () {
     const { glob, document } = this
     glob.refreshVariableList(document.getElementById('storage'))
   },
 
-  action: function (cache) {
+  action (cache) {
     const fs = require('fs')
     const path = require('path')
     const data = cache.actions[cache.index]
     const storage = parseInt(data.storage)
     const varName = this.evalMessage(data.varName, cache)
-    const dataUrl = this.getVariable(storage, varName, cache)
-    if (!dataUrl) {
+    const sourceImage = this.getVariable(storage, varName, cache)
+    if (!sourceImage) {
       this.Canvas.onError(data, cache, 'Image not exist!')
       this.callNextAction(cache)
       return
@@ -110,7 +110,7 @@ module.exports = {
     options.type = data.fillType
     const text = this.evalMessage(data.text, cache)
     try {
-      const result = this.Canvas.drawText(dataUrl, text, options)
+      const result = this.Canvas.drawText(sourceImage, text, options)
       this.storeValue(result, storage, varName, cache)
       this.callNextAction(cache)
     } catch (err) {
@@ -118,11 +118,11 @@ module.exports = {
     }
   },
 
-  mod: function (DBM) {
+  mod (DBM) {
     if (!DBM.Actions.Canvas.OpenTypeJS) {
       DBM.Actions.Canvas.OpenTypeJS = DBM.Actions.getMods().require('opentype.js')
     }
-    DBM.Actions.Canvas.drawText = function (dataUrl, text, options) {
+    DBM.Actions.Canvas.drawText = function (sourceImage, text, options) {
       const path = require('path')
       if (!options) options = {}
       if (!options.color) {
@@ -154,8 +154,8 @@ module.exports = {
       (!options.type || !['fill', 'stroke'].includes(options.type.toLowerCase())) ? options.type = 'fill' : options.type = options.type.toLowerCase()
       const font = this.OpenTypeJS.loadSync(path.normalize(options.font))
       this.CanvasJS.registerFont(options.font, { family: font.names.postScriptName.en })
-      const image = this.loadImage(dataUrl)
-      const canvas = this.CanvasJS.createCanvas(image.width || dataUrl.width, image.height || dataUrl.height)
+      const image = this.loadImage(sourceImage)
+      const canvas = this.CanvasJS.createCanvas(image.width || sourceImage.width, image.height || sourceImage.height)
       const ctx = canvas.getContext('2d')
       ctx.font = `${font.names.fontSubfamily.en} ${options.size}px "${font.names.postScriptName.en}"`
       ctx.fillStyle = options.color
@@ -290,8 +290,8 @@ module.exports = {
       }
       ctx.textDrawingMode = 'glyph'
       if (options.antialias) ctx.antialias = 'none'
-      if (dataUrl.animated) {
-        dataUrl.images = []
+      if (sourceImage.animated) {
+        const tempImages = []
         for (let i = 0; i < image.length; i++) {
           ctx.drawImage(image[i], 0, 0)
           ctx.save()
@@ -302,11 +302,11 @@ module.exports = {
           } else if (options.type === 'stroke') {
             (options.maxWidth) ? ctx.strokeText(text, 0, 0, options.maxWidth) : ctx.strokeText(text, 0, 0)
           }
-          dataUrl.images.push(canvas.toDataURL('image/png'))
+          tempImages.push(new this.Image(canvas.toDataURL('image/png')))
           ctx.restore()
           ctx.clearRect(0, 0, canvas.width, canvas.height)
         }
-        return dataUrl
+        return new this.Images(tempImages, sourceImage)
       } else {
         ctx.drawImage(image, 0, 0)
         ctx.translate(options.x, options.y)
@@ -316,7 +316,7 @@ module.exports = {
         } else if (options.type === 'stroke') {
           (options.maxWidth) ? ctx.strokeText(text, 0, 0, options.maxWidth) : ctx.strokeText(text, 0, 0)
         }
-        return canvas.toDataURL('image/png')
+        return new this.Image(canvas.toDataURL('image/png'))
       }
     }
   }

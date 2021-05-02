@@ -4,12 +4,12 @@ module.exports = {
 
   section: 'Image Editing',
 
-  subtitle: function (data) {
+  subtitle (data) {
     const info = ['Image Width', 'Image Height', 'Is Image Gif?', 'Average Color of Image (hex)', 'GIF Total Frame', 'GIF Delay (ms)', 'GIF Repeat Times', 'Get Image from GIF']
     return `${info[parseInt(data.info)]}`
   },
 
-  variableStorage: function (data, varType) {
+  variableStorage (data, varType) {
     const type = parseInt(data.storage2)
     if (type !== varType) return
     const info = parseInt(data.info)
@@ -37,7 +37,7 @@ module.exports = {
 
   fields: ['storage', 'varName', 'info', 'info2', 'storage2', 'varName2'],
 
-  html: function (isEvent, data) {
+  html (isEvent, data) {
     return `
   <div>
     <div style="float: left; width: 35%;">
@@ -84,7 +84,7 @@ module.exports = {
   </div>`
   },
 
-  init: function () {
+  init () {
     const { glob, document } = this
     glob.refreshVariableList(document.getElementById('storage'))
     const extraInfo = document.getElementById('extraInfo')
@@ -98,53 +98,54 @@ module.exports = {
     glob.onChange(parseInt(document.getElementById('info').value))
   },
 
-  action: function (cache) {
+  action (cache) {
     const data = cache.actions[cache.index]
     const storage = parseInt(data.storage)
     const varName = this.evalMessage(data.varName, cache)
-    const dataUrl = this.getVariable(storage, varName, cache)
-    if (!dataUrl) {
+    let sourceImage = this.getVariable(storage, varName, cache)
+    if (!sourceImage) {
       this.Canvas.onError(data, cache, 'Image not exist!')
       this.callNextAction(cache)
       return
     }
+    sourceImage = this.Canvas.bridge(sourceImage, 1)
     const info = parseInt(data.info)
     let result
     switch (info) {
       case 0:
-        if (dataUrl.animated) {
-          result = dataUrl.width
+        if (sourceImage.animated) {
+          result = sourceImage.width
         } else {
-          const img = this.Canvas.loadImage(dataUrl)
+          const img = this.Canvas.loadImage(sourceImage)
           result = img.width
         }
         break
       case 1:
-        if (dataUrl.animated) {
-          result = dataUrl.height
+        if (sourceImage.animated) {
+          result = sourceImage.height
         } else {
-          const img = this.Canvas.loadImage(dataUrl)
+          const img = this.Canvas.loadImage(sourceImage)
           result = img.height
         }
         break
       case 2:
-        result = !!dataUrl.animated
+        result = !!sourceImage.animated
         break
       case 3:
-        result = this.Canvas.getAverageColor(dataUrl)
+        result = this.Canvas.getAverageColor(sourceImage)
         break
       case 4:
-        if (dataUrl.animated) result = dataUrl.images.length
+        if (sourceImage.animated) result = sourceImage.totalFrames
         break
       case 5:
-        if (dataUrl.animated) result = dataUrl.delay
+        if (sourceImage.animated) result = sourceImage.delay
         break
       case 6:
-        if (dataUrl.animated) result = dataUrl.loopCount
+        if (sourceImage.animated) result = sourceImage.loop
         break
       case 7: {
         const extraInfo = parseInt(this.evalMessage(data.extraInfo, cache))
-        if (dataUrl.animated && dataUrl.images.length > extraInfo) result = dataUrl.images[extraInfo]
+        if (sourceImage.animated && sourceImage.totalFrames > extraInfo) result = sourceImage.images[extraInfo]
         break
       }
     }
@@ -156,10 +157,10 @@ module.exports = {
     this.callNextAction(cache)
   },
 
-  mod: function (DBM) {
-    DBM.Actions.Canvas.getAverageColor = async (dataUrl) => {
-      const img = this.CanvasJS.loadImage(dataUrl)
-      if (dataUrl.animated) {
+  mod (DBM) {
+    DBM.Actions.Canvas.getAverageColor = async (sourceImage) => {
+      const img = this.CanvasJS.loadImage(sourceImage)
+      if (sourceImage.animated) {
         const rgbs = []
         for (let i = 0; i < img.length; i++) {
           const rgb = [0, 0, 0]

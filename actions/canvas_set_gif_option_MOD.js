@@ -4,14 +4,14 @@ module.exports = {
 
   section: 'Image Editing',
 
-  subtitle: function (data) {
+  subtitle (data) {
     const type = ['Set Loop', 'Set Delap', 'Set Images']
     return `${type[parseInt(data.type)]} ${data.value}`
   },
 
   fields: ['storage', 'varName', 'type', 'value'],
 
-  html: function (isEvent, data) {
+  html (isEvent, data) {
     return `
   <div>
     <div style="float: left; width: 35%;">
@@ -41,7 +41,7 @@ module.exports = {
   </div>`
   },
 
-  init: function () {
+  init () {
     const { glob, document } = this
     glob.refreshVariableList(document.getElementById('storage'))
     const value = document.getElementById('value')
@@ -55,16 +55,16 @@ module.exports = {
     glob.onChange(document.getElementById('type'))
   },
 
-  action: async function (cache) {
+  async action (cache) {
     const data = cache.actions[cache.index]
     const storage = parseInt(data.storage)
     const varName = this.evalMessage(data.varName, cache)
-    const dataUrl = this.getVariable(storage, varName, cache)
-    if (!dataUrl) {
+    let sourceImage = this.getVariable(storage, varName, cache)
+    if (!sourceImage) {
       this.Canvas.onError(data, cache, 'Image not exist!')
       this.callNextAction(cache)
       return
-    } else if (!dataUrl.animated) {
+    } else if (!sourceImage.animated) {
       this.Canvas.onError(data, cache, 'Image is not a gif!')
       this.callNextAction(cache)
       return
@@ -78,10 +78,10 @@ module.exports = {
     }
     switch (type) {
       case 0:
-        dataUrl.loopCount = parseInt(value)
+        sourceImage.loop = parseInt(value)
         break
       case 1:
-        dataUrl.delay = parseInt(value)
+        sourceImage.delay = parseInt(value)
         break
       case 2:
         try {
@@ -92,14 +92,19 @@ module.exports = {
           const glob = this.getMods().require('glob')
           const array = glob.sync(value)
           if (array.length > 0) {
-            const list = []
+            const tempImages = []
+            const allWidth = []
+            const allHeight = []
             for (let i = 0; i < array.length; i++) {
-              list.push(await this.Canvas.createImage(array[i]))
+              const image = await this.createImage(array[i], { isCache: true })
+              tempImages.push(image.returnImg)
+              allWidth.push(image.width)
+              allHeight.push(image.height)
             }
-            const img = this.Canvas.loadImage(list[0])
-            dataUrl.images = list
-            dataUrl.width = img.width
-            dataUrl.height = img.height
+            const width = Math.max(...allWidth)
+            const height = Math.max(...allHeight)
+            const { delay, loop } = sourceImage
+            sourceImage = new this.Image(tempImages, { delay, loop, width, height })
           } else {
             this.Canvas.onError(cache, data, "'Value' is not valid images path!")
             break
@@ -109,11 +114,11 @@ module.exports = {
         }
         break
     }
-    this.storeValue(dataUrl, storage, varName, cache)
+    this.storeValue(sourceImage, storage, varName, cache)
     this.callNextAction(cache)
   },
 
-  mod: function () {
+  mod () {
   }
 
 }

@@ -4,14 +4,14 @@ module.exports = {
 
   section: 'Image Editing',
 
-  subtitle: function (data) {
+  subtitle (data) {
     const storeTypes = ['', 'Temp Variable', 'Server Variable', 'Global Variable']
     return `${storeTypes[parseInt(data.storage2)]} (${data.varName2}) -> ${storeTypes[parseInt(data.storage)]} (${data.varName})`
   },
 
   fields: ['storage', 'varName', 'storage2', 'varName2', 'x', 'y', 'effect', 'opacity', 'expand'],
 
-  html: function (isEvent, data) {
+  html (isEvent, data) {
     return `
   <div>
     <div style="float: left; width: 45%;">
@@ -70,25 +70,25 @@ module.exports = {
     </div>`
   },
 
-  init: function () {
+  init () {
     const { glob, document } = this
     glob.refreshVariableList(document.getElementById('storage'))
   },
 
-  action: function (cache) {
+  action (cache) {
     const data = cache.actions[cache.index]
     const storage = parseInt(data.storage)
     const varName = this.evalMessage(data.varName, cache)
-    const dataUrl = this.getVariable(storage, varName, cache)
-    if (!dataUrl) {
+    const sourceImage = this.getVariable(storage, varName, cache)
+    if (!sourceImage) {
       this.Canvas.onError(data, cache, 'Image 1 not exist!')
       this.callNextAction(cache)
       return
     }
     const storage2 = parseInt(data.storage2)
     const varName2 = this.evalMessage(data.varName2, cache)
-    const dataUrl2 = this.getVariable(storage2, varName2, cache)
-    if (!dataUrl2) {
+    const sourceImage2 = this.getVariable(storage2, varName2, cache)
+    if (!sourceImage2) {
       this.Canvas.onError(data, cache, 'Image 2 not exist!')
       this.callNextAction(cache)
       return
@@ -101,7 +101,7 @@ module.exports = {
     const effect = parseInt(data.effect)
     if (effect === 1) options.effect = 'mask'
     try {
-      const result = this.Canvas.drawImage(dataUrl, dataUrl2, options)
+      const result = this.Canvas.drawImage(sourceImage, sourceImage2, options)
       this.storeValue(result, storage, varName, cache)
       this.callNextAction(cache)
     } catch (err) {
@@ -109,7 +109,7 @@ module.exports = {
     }
   },
 
-  mod: function (DBM) {
+  mod (DBM) {
     DBM.Actions.Canvas.RBGtoLin = function (color) {
       color = color / 255
       if (color <= 0.03928) {
@@ -118,6 +118,7 @@ module.exports = {
         return Math.pow((color + 0.055) / 1.055, 2.4)
       }
     }
+
     DBM.Actions.Canvas.getLuminance = function (imageData) {
       const Luminance = []
       for (let i = 0; i < imageData.length; i += 4) {
@@ -127,19 +128,29 @@ module.exports = {
       return Luminance
     }
 
-    DBM.Actions.Canvas.mask = function (ctx, image, image2, x, y, opacity) {
-      const imageData = this.getImageData(image, image.width, image.height, false, 0, 0)
-      const imageData2 = this.getImageData(image2, image.width, image.height, true, x, y).data
-      const Luminance = this.getLuminance(imageData2)
-      let alpha = 3
-      for (let i = 0; i < Luminance.length; i++) {
-        imageData.data[alpha] = Luminance[i] * opacity * 255
-        alpha += 4
+    DBM.Actions.Canvas.drawFnc = function (image, image2, canvas, options) {
+      const { x, y, opacity, effect } = options
+      const { width, height } = canvas
+      this.clearRect(0, 0, width, height)
+      if (effect && effect === 'mask') {
+        const imageData = this.getImageData(image, 0, 0, image.width, image.height, false)
+        const imageData2 = this.getImageData(image2, x, y, image.width, image.height, true).data
+        const Luminance = this.getLuminance(imageData2)
+        let alpha = 3
+        for (let i = 0; i < Luminance.length; i++) {
+          imageData.data[alpha] = Luminance[i] * opacity * 255
+          alpha += 4
+        }
+        this.putImageData(imageData, 0, 0)
+      } else {
+        this.globalAlpha = 1
+        this.drawImage(image, 0, 0)
+        this.globalAlpha = opacity
+        this.drawImage(image2, x, y)
       }
-      ctx.putImageData(imageData, 0, 0)
     }
 
-    DBM.Actions.Canvas.getImageData = function (image, width, height, grayscale, x, y) {
+    DBM.Actions.Canvas.getImageData = function (image, x, y, width, height, grayscale) {
       const tempCanvas = this.CanvasJS.createCanvas(width, height)
       const tempCtx = tempCanvas.getContext('2d')
       tempCtx.rect(0, 0, width, height)
@@ -150,11 +161,18 @@ module.exports = {
       return tempCtx.getImageData(0, 0, width, height)
     }
 
-    DBM.Actions.Canvas.drawImage = function (dataUrl, dataUrl2, options) {
-      const image = this.loadImage(dataUrl)
-      const image2 = this.loadImage(dataUrl2)
-      const width = image.width || dataUrl.width
-      const height = image.height || dataUrl.height
+    DBM.Actions.Canvas.putImageData = function (imageData, x, y, width, height) {
+      const canvas = this.CanvasJS.createCanvas(width, height)
+      const ctx = canvas.getContext('2d')
+      ctx.putImageData(imageData, x, y, width, height)
+      return new this.Image(canvas.toDataURL('image/png'))
+    }
+
+    DBM.Actions.Canvas.drawImage = function (sourceImage, sourceImage2, options) {
+      const image = this.loadImage(sourceImage)
+      const image2 = this.loadImage(sourceImage2)
+      const width = image.width || sourceImage.width
+      const height = image.height || sourceImage.height
       if (!options.x || isNaN(options.x)) options.x = 0
       if (!options.y || isNaN(options.y)) options.y = 0
       if (!options.opacity || (options.opacity && isNaN(options.opacity)) || options.opacity > 100) {
@@ -162,89 +180,41 @@ module.exports = {
       } else {
         options.opacity = Number(options.opacity) / 100
       }
-      let canvas
-      if (options.expand) {
-        canvas = this.CanvasJS.createCanvas(Math.max(width, (image2.width || dataUrl2.width) + options.x), Math.max(height, (image2.height || dataUrl2.height) + options.y))
-      } else {
-        canvas = this.CanvasJS.createCanvas(width, height)
-      }
+      const tempImages = []
+      const canvas = (options.expand) ? this.CanvasJS.createCanvas(Math.max(width, (image2.width || sourceImage2.width) + options.x), Math.max(height, (image2.height || sourceImage2.height) + options.y)) : this.CanvasJS.createCanvas(width, height)
       const ctx = canvas.getContext('2d')
-      if (!dataUrl.animated && !dataUrl2.animated) {
-        if (options.effect && options.effect === 'mask') {
-          this.mask(ctx, image, image2, options.x, options.y, options.opacity)
-          return canvas.toDataURL('image/png')
-        } else {
-          ctx.drawImage(image, 0, 0)
-          ctx.globalAlpha = options.opacity
-          ctx.drawImage(image2, options.x, options.y)
-          return canvas.toDataURL('image/png')
-        }
-      } else if (!dataUrl.animated && dataUrl2.animated) {
-        dataUrl2.images = []
-        dataUrl2.width = canvas.width
-        dataUrl2.height = canvas.height
+      if (!sourceImage.animated && !sourceImage2.animated) {
+        this.drawFnc.call(ctx, image, image2, canvas, options)
+        return new this.Image(canvas.toDataURL('image/png'))
+      } else if (!sourceImage.animated && sourceImage2.animated) {
+        sourceImage2.width = canvas.width
+        sourceImage2.height = canvas.height
         for (let i = 0; i < image2.length; i++) {
-          ctx.clearRect(0, 0, canvas.width, canvas.height)
-          if (options.effect && options.effect === 'mask') {
-            this.mask(ctx, image, image2[i], options.x, options.y, options.opacity)
-          } else {
-            ctx.globalAlpha = 1
-            ctx.drawImage(image, 0, 0)
-            ctx.globalAlpha = options.opacity
-            ctx.drawImage(image2[i], options.x, options.y)
-          }
-          dataUrl2.images.push(canvas.toDataURL('image/png'))
+          this.drawFnc.call(ctx, image, image2[i], canvas, options)
+          tempImages.push(new this.Image(canvas.toDataURL('image/png')))
         }
-        return dataUrl2
-      } else if (dataUrl.animated && !dataUrl2.animated) {
-        dataUrl.images = []
-        dataUrl.width = canvas.width
-        dataUrl.height = canvas.height
+        return new this.Image(tempImages, sourceImage2)
+      } else if (sourceImage.animated && !sourceImage2.animated) {
+        sourceImage.width = canvas.width
+        sourceImage.height = canvas.height
         for (let i = 0; i < image.length; i++) {
-          ctx.clearRect(0, 0, canvas.width, canvas.height)
-          if (options.effect && options.effect === 'mask') {
-            this.mask(ctx, image[i], image2, options.x, options.y, options.opacity)
-          } else {
-            ctx.globalAlpha = 1
-            ctx.drawImage(image[i], 0, 0)
-            ctx.globalAlpha = options.opacity
-            ctx.drawImage(image2, options.x, options.y)
-            dataUrl.images.push(canvas.toDataURL('image/png'))
-          }
-          dataUrl.images.push(canvas.toDataURL('image/png'))
+          this.drawFnc.call(ctx, image[i], image2, canvas, options)
+          tempImages.push(new this.Image(canvas.toDataURL('image/png')))
         }
-        return dataUrl
-      } else if (dataUrl.animated && dataUrl2.animated) {
-        dataUrl.images = []
-        dataUrl.width = canvas.width
-        dataUrl.height = canvas.height
+        return new this.Image(tempImages, sourceImage)
+      } else if (sourceImage.animated && sourceImage2.animated) {
+        sourceImage.width = canvas.width
+        sourceImage.height = canvas.height
         const maxFrame = Math.max(image.length, image2.length)
-        let imageFrame = 0
-        let image2Frame = 0
+        let imgFrame = 0
+        let img2Frame = 0
         for (let i = 0; i < maxFrame; i++) {
-          ctx.clearRect(0, 0, canvas.width, canvas.height)
-          if (options.effect && options.effect === 'mask') {
-            ctx.clearRect(0, 0, canvas.width, canvas.height)
-            this.mask(ctx, image[imageFrame], image2[image2Frame], options.x, options.y, options.opacity)
-          } else {
-            ctx.globalAlpha = 1
-            ctx.drawImage(image[imageFrame], 0, 0)
-            ctx.globalAlpha = options.opacity
-            ctx.drawImage(image2[image2Frame], options.x, options.y)
-          }
-          dataUrl.images.push(canvas.toDataURL('image/png'))
-          if (imageFrame + 1 > image.length) {
-            imageFrame = 0
-          } else {
-            imageFrame++
-          }
-          if (image2Frame + 1 > image2.length) {
-            image2Frame = 0
-          } else {
-            image2Frame++
-          }
+          this.drawFnc.call(ctx, image[imgFrame], image2[img2Frame], canvas, options)
+          tempImages.push(new this.Image(canvas.toDataURL('image/png')))
+          imgFrame = (imgFrame + 1 >= image.length) ? 0 : imgFrame + 1
+          img2Frame = (img2Frame + 1 >= image2.length) ? 0 : img2Frame + 1
         }
-        return dataUrl
+        return new this.Image(tempImages, sourceImage)
       }
     }
   }

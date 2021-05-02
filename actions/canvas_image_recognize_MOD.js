@@ -4,14 +4,14 @@ module.exports = {
 
   section: 'Image Editing',
 
-  subtitle: function (data) {
+  subtitle (data) {
     const storeTypes = ['', 'Temp Variable', 'Server Variable', 'Global Variable']
     return `Recognize image ${storeTypes[parseInt(data.storage)]} (${data.varName}) for language ${data.lang}`
   },
 
   fields: ['storage', 'varName', 'left', 'top', 'width', 'height', 'lang', 'offsetType', 'acceptRange', 'max', 'offset', 'forceAccept', 'forceMax', 'debug', 'storage2', 'varName2'],
 
-  html: function (isEvent, data) {
+  html (isEvent, data) {
     return `
   <div style="width: 550px; height: 350px; overflow-y: scroll;">
     <div>
@@ -91,7 +91,7 @@ module.exports = {
   </div>`
   },
 
-  init: function () {
+  init () {
     const { glob, document } = this
     glob.refreshVariableList(document.getElementById('storage'))
     document.getElementById('link').onclick = function () {
@@ -99,12 +99,12 @@ module.exports = {
     }
   },
 
-  action: async function (cache) {
+  async action (cache) {
     const data = cache.actions[cache.index]
     const storage = parseInt(data.storage)
     const varName = this.evalMessage(data.varName, cache)
-    const dataUrl = this.getVariable(storage, varName, cache)
-    if (!dataUrl) {
+    const sourceImage = this.getVariable(storage, varName, cache)
+    if (!sourceImage) {
       this.Canvas.onError(data, cache, 'Image not exist!')
       this.callNextAction(cache)
       return
@@ -123,7 +123,7 @@ module.exports = {
     options.forceMax = Boolean(data.forceMax === 'true')
     options.offsetType = data.offsetType
     try {
-      const result = await this.Canvas.Recognize(dataUrl, options)
+      const result = await this.Canvas.Recognize(sourceImage, options)
       const storage2 = parseInt(data.storage2)
       const varName2 = this.evalMessage(data.varName2, cache)
       this.storeValue(result, storage2, varName2, cache)
@@ -133,7 +133,7 @@ module.exports = {
     }
   },
 
-  mod: function (DBM) {
+  mod (DBM) {
     if (!DBM.Actions.Canvas.TesseractJS) {
       try {
         DBM.Actions.Canvas.TesseractJS = DBM.Actions.getMods().require('tesseract.js')
@@ -141,7 +141,7 @@ module.exports = {
         DBM.Actions.Canvas.onError('', '', err)
       }
     }
-    DBM.Actions.Canvas.Recognize = async function (dataUrl, options) {
+    DBM.Actions.Canvas.Recognize = async function (sourceImage, options) {
       function newOptions (o, width, height) {
         const options = {}
         options.left = (isNaN(o.left)) ? 0 : o.left || 0
@@ -184,9 +184,9 @@ module.exports = {
         }
         return options
       }
-      const image = this.loadImage(dataUrl)
-      const width = image.width || dataUrl.width
-      const height = image.height || dataUrl.height
+      const image = this.loadImage(sourceImage)
+      const width = image.width || sourceImage.width
+      const height = image.height || sourceImage.height
       options = newOptions(options, width, height)
       const { createWorker } = this.TesseractJS
       if (options.debug) console.log('Initializing tesseract.js worker...')
@@ -196,14 +196,14 @@ module.exports = {
       await worker.initialize(options.lang)
       if (options.debug) console.log('Worker loaded.')
       let result
-      if (dataUrl.animated) {
+      if (sourceImage.animated) {
         result = []
-        for (let i = 0; i < dataUrl.images.length; i++) {
-          const data = await this.RecognizeFN(worker, dataUrl.images[i], options)
+        for (let i = 0; i < sourceImage.images.length; i++) {
+          const data = await this.RecognizeFN(worker, sourceImage.images[i], options)
           result.push(data)
         }
       } else {
-        result = await this.RecognizeFN(worker, dataUrl, options)
+        result = await this.RecognizeFN(worker, sourceImage.image, options)
       }
       await worker.terminate()
       return result

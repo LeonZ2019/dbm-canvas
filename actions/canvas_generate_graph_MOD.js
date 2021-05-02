@@ -4,12 +4,12 @@ module.exports = {
 
   section: 'Image Editing',
 
-  subtitle: function (data) {
+  subtitle (data) {
     const storeTypes = ['', 'Temp Variable', 'Server Variable', 'Global Variable']
     return `${storeTypes[parseInt(data.storage)]} (${data.varName})`
   },
 
-  variableStorage: function (data, varType) {
+  variableStorage (data, varType) {
     const type = parseInt(data.storage)
     if (type !== varType) return
     return ([data.varName, 'Image'])
@@ -17,7 +17,7 @@ module.exports = {
 
   fields: ['type', 'sort', 'width', 'height', 'title', 'borderWidth', 'borderColor', 'borderColorAlpha', 'bgColor', 'bgColorAlpha', 'labels', 'datasets', 'storage', 'varName'],
 
-  html: function (isEvent, data) {
+  html (isEvent, data) {
     return `
   <div style="width: 550px; height: 350px; overflow-y: scroll;">
     <div>
@@ -107,10 +107,10 @@ module.exports = {
   </div>`
   },
 
-  init: function () {
+  init () {
   },
 
-  action: function (cache) {
+  action (cache) {
     const data = cache.actions[cache.index]
     const storage = parseInt(data.storage)
     const varName = this.evalMessage(data.varName, cache)
@@ -162,7 +162,7 @@ module.exports = {
     }
   },
 
-  mod: function (DBM) {
+  mod (DBM) {
     if (!DBM.Actions.Canvas.ChartJS) {
       try {
         DBM.Actions.Canvas.ChartJS = DBM.Actions.getMods().require('chart.js')
@@ -171,7 +171,7 @@ module.exports = {
       }
     }
     DBM.Actions.Canvas.generateChart = function (type, width, height, title, labels, data, sort, bgColor, bgColorAlpha, borderWidth, borderColor, borderColorAlpha, options = {}) {
-      const config = { type: type, data: {}, options: options }
+      const config = { type, data: {}, options }
       config.options.responsive = false
       config.options.animation = false
       if (sort !== 0) {
@@ -192,7 +192,7 @@ module.exports = {
         data = sortedData
         labels = sortedLabels
       }
-      config.data = { labels: labels, datasets: [{ label: title, data: data }] }
+      config.data = { labels, datasets: [{ label: title, data }] }
       function getColors (colors, alpha) {
         return colors.map(hex => `rgba(${parseInt(hex.slice(0, 2), 16)},${parseInt(hex.slice(2, 4), 16)},${parseInt(hex.slice(4, 6), 16)},${alpha})`)
       }
@@ -222,7 +222,7 @@ module.exports = {
       const ctx = canvas.getContext('2d')
       const chart = new this.ChartJS(ctx, config)
       try {
-        return chart.canvas.toDataURL('image/png')
+        return new this.Image(chart.canvas.toDataURL('image/png'))
       } catch (error) {
         throw new Error(error)
       }
