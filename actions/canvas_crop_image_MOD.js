@@ -4,14 +4,14 @@ module.exports = {
 
   section: 'Image Editing',
 
-  subtitle: function (data) {
+  subtitle (data) {
     const storeTypes = ['', 'Temp Variable', 'Server Variable', 'Global Variable']
     return `${storeTypes[parseInt(data.storage)]} (${data.varName})`
   },
 
   fields: ['storage', 'varName', 'align', 'align2', 'width', 'height', 'positionx', 'positiony'],
 
-  html: function (isEvent, data) {
+  html (isEvent, data) {
     return `
   <div>
     <div style="float: left; width: 45%;">
@@ -77,7 +77,7 @@ module.exports = {
   </div>`
   },
 
-  init: function () {
+  init () {
     const { glob, document } = this
 
     const position = document.getElementById('position')
@@ -97,12 +97,12 @@ module.exports = {
     glob.onChange0(document.getElementById('align'))
   },
 
-  action: function (cache) {
+  action (cache) {
     const data = cache.actions[cache.index]
     const storage = parseInt(data.storage)
     const varName = this.evalMessage(data.varName, cache)
-    const dataUrl = this.getVariable(storage, varName, cache)
-    if (!dataUrl) {
+    const sourceImage = this.getVariable(storage, varName, cache)
+    if (!sourceImage) {
       this.Canvas.onError(data, cache, 'Image not exist!')
       this.callNextAction(cache)
       return
@@ -117,7 +117,7 @@ module.exports = {
       options.y = parseFloat(this.evalMessage(data.positiony, cache))
     }
     try {
-      const result = this.Canvas.cropImage(dataUrl, options)
+      const result = this.Canvas.cropImage(sourceImage, options)
       this.storeValue(result, storage, varName, cache)
       this.callNextAction(cache)
     } catch (err) {
@@ -125,11 +125,11 @@ module.exports = {
     }
   },
 
-  mod: function (DBM) {
-    DBM.Actions.Canvas.cropImage = function (dataUrl, options) {
-      let image = this.loadImage(dataUrl)
+  mod (DBM) {
+    DBM.Actions.Canvas.cropImage = function (sourceImage, options) {
+      let image = this.loadImage(sourceImage)
       let images
-      if (dataUrl.animated) {
+      if (sourceImage.animated) {
         images = image
         image = images[0]
       }
@@ -224,19 +224,19 @@ module.exports = {
       }
       const canvas = this.CanvasJS.createCanvas(parseFloat(options.width), parseFloat(options.height))
       const ctx = canvas.getContext('2d')
-      if (dataUrl.animated) {
-        dataUrl.images = []
-        dataUrl.width = canvas.width
-        dataUrl.height = canvas.height
+      if (sourceImage.animated) {
+        const tempImages = []
+        const { width, height } = canvas
+        const { delay, loop } = sourceImage
         for (let i = 0; i < images.length; i++) {
-          ctx.clearRect(0, 0, canvas.width, canvas.height)
+          ctx.clearRect(0, 0, width, height)
           ctx.drawImage(images[i], x, y)
-          dataUrl.images.push(canvas.toDataURL('image/png'))
+          tempImages.push(new this.Image(canvas.toDataURL('image/png')))
         }
-        return dataUrl
+        return new this.Image(tempImages, { delay, loop, width, height })
       } else {
         ctx.drawImage(image, x, y)
-        return canvas.toDataURL('image/png')
+        return new this.Image(canvas.toDataURL('image/png'))
       }
     }
   }

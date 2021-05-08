@@ -1,11 +1,10 @@
-/* eslint-disable no-eval */
 module.exports = {
 
   name: 'Canvas Create Background',
 
   section: 'Image Editing',
 
-  subtitle: function (data) {
+  subtitle (data) {
     if (parseInt(data.info) === 0) {
       return data.color ? `Create with Color ${data.color}` : 'No color background has create'
     } else if (parseInt(data.info) === 1) {
@@ -13,7 +12,7 @@ module.exports = {
     }
   },
 
-  variableStorage: function (data, varType) {
+  variableStorage (data, varType) {
     const type = parseInt(data.storage)
     if (type !== varType) return
     return ([data.varName, 'Image'])
@@ -21,7 +20,7 @@ module.exports = {
 
   fields: ['width', 'height', 'info', 'gradient', 'color', 'storage', 'varName'],
 
-  html: function (isEvent, data) {
+  html (isEvent, data) {
     return `
   <div>
     <div style="float: left; width: 46%;">
@@ -65,7 +64,7 @@ module.exports = {
   </div>`
   },
 
-  init: function () {
+  init () {
     const { glob, document } = this
 
     const gradient = document.getElementById('Gradient')
@@ -86,7 +85,7 @@ module.exports = {
     glob.onChange0(document.getElementById('info'))
   },
 
-  action: function (cache) {
+  action (cache) {
     const data = cache.actions[cache.index]
     const Canvas = require('canvas')
     const width = parseInt(this.evalMessage(data.width, cache))
@@ -107,18 +106,19 @@ module.exports = {
       }
       case 1: {
         const gradient = String(this.evalMessage(data.gradient, cache))
+        // eslint-disable-next-line no-eval
         eval(gradient)
         break
       }
     }
-    const result = canvas.toDataURL('image/png')
+    const result = new this.Canvas.Image(canvas.toDataURL('image/png'))
     const varName = this.evalMessage(data.varName, cache)
     const storage = parseInt(data.storage)
     this.storeValue(result, storage, varName, cache)
     this.callNextAction(cache)
   },
 
-  mod: function () {
+  mod () {
   }
 
 }

@@ -4,11 +4,11 @@ module.exports = {
 
   section: 'Image Editing',
 
-  subtitle: function (data) {
+  subtitle (data) {
     return `Save to "${data.Path}"`
   },
 
-  variableStorage: function (data, varType) {
+  variableStorage (data, varType) {
     const type = parseInt(data.storage2)
     if (type !== varType) return
     return ([data.varName2, 'Image Path'])
@@ -16,7 +16,7 @@ module.exports = {
 
   fields: ['storage', 'varName', 'Path', 'storage2', 'varName2'],
 
-  html: function (isEvent, data) {
+  html (isEvent, data) {
     return `
   <div>
     <div style="float: left; width: 40%;">
@@ -50,18 +50,18 @@ module.exports = {
   </div>`
   },
 
-  init: function () {
+  init () {
     const { glob, document } = this
     glob.variableChange(document.getElementById('storage2'), 'varNameContainer')
   },
 
-  action: function (cache) {
+  action (cache) {
     const data = cache.actions[cache.index]
     const fs = require('fs')
     const storage = parseInt(data.storage)
     const varName = this.evalMessage(data.varName, cache)
-    const dataUrl = this.getVariable(storage, varName, cache)
-    if (!dataUrl) {
+    const sourceImage = this.getVariable(storage, varName, cache)
+    if (!sourceImage) {
       this.Canvas.onError(data, cache, 'Image not exist!')
       this.callNextAction(cache)
       return
@@ -72,7 +72,8 @@ module.exports = {
       return
     } else {
       let possibleExt = '.png'
-      if (dataUrl.animated) possibleExt = '.gif'
+      // if () continue....
+      if (sourceImage.animated) possibleExt = '.gif'
       const parse = require('path').parse(path)
       if (parse.ext === '') {
         path += possibleExt
@@ -81,13 +82,7 @@ module.exports = {
       }
     }
     try {
-      let buffer
-      if (dataUrl.animated) {
-        buffer = this.Canvas.GifToBuffer(dataUrl)
-      } else {
-        buffer = this.Canvas.toBuffer(dataUrl)
-      }
-      fs.writeFileSync(path, buffer)
+      fs.writeFileSync(path, this.Canvas.toBuffer(sourceImage))
       const varName2 = this.evalMessage(data.varName2, cache)
       const storage2 = parseInt(data.storage2)
       if (varName2 && storage2) {
@@ -99,7 +94,7 @@ module.exports = {
     }
   },
 
-  mod: function () {
+  mod () {
   }
 
 }

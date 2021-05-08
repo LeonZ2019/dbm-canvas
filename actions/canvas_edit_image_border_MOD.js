@@ -4,14 +4,14 @@ module.exports = {
 
   section: 'Image Editing',
 
-  subtitle: function (data) {
+  subtitle (data) {
     const storeTypes = ['', 'Temp Variable', 'Server Variable', 'Global Variable']
     return `${storeTypes[parseInt(data.storage)]} (${data.varName})`
   },
 
   fields: ['storage', 'varName', 'circleinfo', 'radius'],
 
-  html: function (isEvent, data) {
+  html (isEvent, data) {
     return `
   <div>
     <div style="float: left; width: 45%;">
@@ -40,13 +40,13 @@ module.exports = {
   </div>`
   },
 
-  init: function () {
+  init () {
     const { glob, document } = this
 
     glob.refreshVariableList(document.getElementById('storage'))
   },
 
-  action: function (cache) {
+  action (cache) {
     const data = cache.actions[cache.index]
     const storage = parseInt(data.storage)
     const varName = this.evalMessage(data.varName, cache)
@@ -67,8 +67,8 @@ module.exports = {
     }
   },
 
-  mod: function (DBM) {
-    DBM.Actions.Canvas.editBorderFN = (ctx, width, height, type, radius) => {
+  mod (DBM) {
+    DBM.Actions.Canvas.editBorderFnc = (ctx, width, height, type, radius) => {
       ctx.clearRect(0, 0, width, height)
       switch (type) {
         case 0: case 'corner':
@@ -93,36 +93,34 @@ module.exports = {
           break
       }
     }
-    DBM.Actions.Canvas.editBorder = function (dataUrl, type, radius) {
-      const image = this.loadImage(dataUrl)
-      const width = image.width || dataUrl.width
-      const height = image.height || dataUrl.height
+    DBM.Actions.Canvas.editBorder = function (sourceImage, type, radius) {
+      const image = this.loadImage(sourceImage)
+      const width = image.width || sourceImage.width
+      const height = image.height || sourceImage.height
       if (isNaN(type)) type = type.toLowerCase()
       if ([1, 'circle'].includes(type) && width !== height) {
         type = 'corner'
         radius = Math.min(width, height) / 2
       }
       if ([0, 'corner'].includes(type) && radius <= 0) {
-        return dataUrl
+        return sourceImage
       } else if ([1, 'corner'].includes(type) && (radius > width || radius > height)) {
         radius = Math.min(width, height) / 2
       }
       const canvas = this.CanvasJS.createCanvas(width, height)
       const ctx = canvas.getContext('2d')
-      if (dataUrl.animated) {
-        dataUrl.images = []
-        const fs = require('fs')
+      if (sourceImage.animated) {
+        const tempImages = []
         for (let i = 0; i < image.length; i++) {
-          this.editBorderFN(ctx, width, height, type, radius)
+          this.editBorderFnc(ctx, width, height, type, radius)
           ctx.drawImage(image[i], 0, 0)
-          dataUrl.images.push(canvas.toDataURL('image/png'))
-          fs.writeFileSync('.\\resources\\test_' + i + '.png', canvas.toBuffer('image/png', { compressionLevel: 9 }))
+          tempImages.push(new this.Image(canvas.toDataURL('image/png')))
         }
-        return dataUrl
+        return new this.Image(tempImages, sourceImage)
       } else {
-        this.editBorderFN(ctx, width, height, type, radius)
+        this.editBorderFnc(ctx, width, height, type, radius)
         ctx.drawImage(image, 0, 0)
-        return canvas.toDataURL('image/png')
+        return new this.Image(canvas.toDataURL('image/png'))
       }
     }
   }
