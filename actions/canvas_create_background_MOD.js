@@ -1,4 +1,3 @@
-/* eslint-disable no-eval */
 module.exports = {
 
   name: 'Canvas Create Background',
@@ -107,6 +106,7 @@ module.exports = {
       }
       case 1: {
         const gradient = String(this.evalMessage(data.gradient, cache))
+        // eslint-disable-next-line no-eval
         eval(gradient)
         break
       }

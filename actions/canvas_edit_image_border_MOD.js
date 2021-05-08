@@ -68,28 +68,28 @@ module.exports = {
   },
 
   mod (DBM) {
-    DBM.Actions.Canvas.editBorderFnc = (width, height, type, radius) => {
-      this.clearRect(0, 0, width, height)
+    DBM.Actions.Canvas.editBorderFnc = (ctx, width, height, type, radius) => {
+      ctx.clearRect(0, 0, width, height)
       switch (type) {
         case 0: case 'corner':
-          this.beginPath()
-          this.moveTo(radius, 0)
-          this.lineTo(width - radius, 0)
-          this.quadraticCurveTo(width, 0, width, radius)
-          this.lineTo(width, height - radius)
-          this.quadraticCurveTo(width, height, width - radius, height)
-          this.lineTo(radius, height)
-          this.quadraticCurveTo(0, height, 0, height - radius)
-          this.lineTo(0, radius)
-          this.quadraticCurveTo(0, 0, radius, 0)
-          this.closePath()
-          this.clip()
+          ctx.beginPath()
+          ctx.moveTo(radius, 0)
+          ctx.lineTo(width - radius, 0)
+          ctx.quadraticCurveTo(width, 0, width, radius)
+          ctx.lineTo(width, height - radius)
+          ctx.quadraticCurveTo(width, height, width - radius, height)
+          ctx.lineTo(radius, height)
+          ctx.quadraticCurveTo(0, height, 0, height - radius)
+          ctx.lineTo(0, radius)
+          ctx.quadraticCurveTo(0, 0, radius, 0)
+          ctx.closePath()
+          ctx.clip()
           break
         case 1: case 'circle': default:
-          this.beginPath()
-          this.arc(width / 2, height / 2, (width + height) / 4, 0, Math.PI * 2)
-          this.closePath()
-          this.clip()
+          ctx.beginPath()
+          ctx.arc(width / 2, height / 2, (width + height) / 4, 0, Math.PI * 2)
+          ctx.closePath()
+          ctx.clip()
           break
       }
     }
@@ -112,13 +112,13 @@ module.exports = {
       if (sourceImage.animated) {
         const tempImages = []
         for (let i = 0; i < image.length; i++) {
-          this.editBorderFnc.call(ctx, width, height, type, radius)
+          this.editBorderFnc(ctx, width, height, type, radius)
           ctx.drawImage(image[i], 0, 0)
           tempImages.push(new this.Image(canvas.toDataURL('image/png')))
         }
         return new this.Image(tempImages, sourceImage)
       } else {
-        this.editBorderFnc.call(ctx, width, height, type, radius)
+        this.editBorderFnc(ctx, width, height, type, radius)
         ctx.drawImage(image, 0, 0)
         return new this.Image(canvas.toDataURL('image/png'))
       }

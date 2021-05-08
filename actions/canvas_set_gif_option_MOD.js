@@ -32,6 +32,7 @@ module.exports = {
         <option value="0" selected>Loop (integer)</option>
         <option value="1">Delay (ms)</option>
         <option value="2">Images (path)</option>
+        <option value="3">FPS (integer)</option>
       </select>
     </div>
     <div style="padding-left: 5%; float: left; width: 60%;">
@@ -71,7 +72,7 @@ module.exports = {
     }
     const type = parseInt(data.type)
     const value = this.evalMessage(data.value, cache)
-    if ((type < 2) && isNaN(value)) {
+    if (isNaN(value)) {
       this.Canvas.onError(data, cache, "'Value' is not a number!")
       this.callNextAction(cache)
       return
@@ -112,6 +113,9 @@ module.exports = {
         } catch (err) {
           this.Canvas.onError(data, cache, err)
         }
+        break
+      case 3:
+        sourceImage.delay = parseInt(1 / parseInt(value) * 1000)
         break
     }
     this.storeValue(sourceImage, storage, varName, cache)

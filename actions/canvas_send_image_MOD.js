@@ -108,9 +108,19 @@ module.exports = {
     const { glob, document } = this
     const pingAuthor = document.getElementById('pingAuthor')
     const replyMessage = document.getElementById('replyMessage')
-    glob.sendTargetChange(document.getElementById('channel'), 'varNameContainer')
-    glob.pingAuthor = function () {
-      if (document.getElementById('sendOrReply').value === 'send') {
+    const sendOrReply = document.getElementById('sendOrReply')
+
+    glob.checkDJS = function () {
+      const { version } = require('discord.js')
+      if (version.startsWith('12')) {
+        const options = sendOrReply.getElementsByTagName('option')
+        options[1].disabled = true
+      }
+    }
+    glob.checkDJS()
+
+    glob.pingAuthor = function (select) {
+      if (select.value === 'send') {
         pingAuthor.style.display = 'none'
         replyMessage.style.display = 'none'
       } else {
@@ -118,7 +128,9 @@ module.exports = {
         replyMessage.style.display = null
       }
     }
-    glob.pingAuthor()
+    glob.pingAuthor(sendOrReply)
+
+    glob.variableChange(document.getElementById('storage2'), 'varNameContainer2')
     glob.messageChange(document.getElementById('replyingMessage'), 'replyMsgContainer')
     glob.variableChange(document.getElementById('storage2'), 'varNameContainer2')
   },
@@ -127,8 +139,8 @@ module.exports = {
     const data = cache.actions[cache.index]
     const storage = parseInt(data.storage)
     const varName = this.evalMessage(data.varName, cache)
-    const dataUrl = this.getVariable(storage, varName, cache)
-    if (!dataUrl) {
+    const sourceImage = this.getVariable(storage, varName, cache)
+    if (!sourceImage) {
       this.Canvas.onError(data, cache, 'Image not exist!')
       this.callNextAction(cache)
       return
@@ -138,15 +150,16 @@ module.exports = {
     const varName2 = this.evalMessage(data.varName2, cache)
     const targetChannel = this.getSendTarget(channel, varName2, cache)
     let name = this.evalMessage(data.imgName, cache)
-    if (dataUrl.animated) {
+    if (sourceImage.animated) {
       name += '.gif'
     } else {
       name += '.png'
     }
     if (parseInt(data.spoiler) === 1) name = `SPOILER_${name}`
     try {
-      const attachment = await this.Canvas.toAttachment(dataUrl, name)
+      const attachment = await this.Canvas.toAttachment(sourceImage, name)
       let message
+      if (this.getDBM().DiscordJS.version.startsWith('12')) data.sendOrReply = 'send'
       if (data.sendOrReply === 'send') {
         if (targetChannel && targetChannel.send) message = await targetChannel.send(content === '' ? '' : content, attachment)
       } else if (data.sendOrReply === 'reply') {

@@ -4,6 +4,8 @@ module.exports = {
 
   section: 'Image Editing',
 
+  version: '3.0.1',
+
   subtitle (data) {
     return `${data.url}`
   },
@@ -117,7 +119,7 @@ module.exports = {
           if (commandExists.sync('node')) {
             const arch = require('child_process').execSync('node -p "process.arch"').toString()
             if (arch === 'x64\n') {
-              console.log(chalk.hex('00FF7F')(`Solved: Canvas changed node.js ${process.arch} to node.js x64`))
+              console.log(chalk.hex('00FF7F')(`Canvas changed node.js ${process.arch} to node.js x64`))
               require('child_process').spawnSync('node', [process.argv[1]], { cwd: process.cwd(), stdio: [0, 1, 2] })
               process.exit()
             } else {
@@ -185,66 +187,66 @@ module.exports = {
     DBM.Actions.Canvas.JimpFnc = {
       param0 (fncName) {
         const jimp = DBM.Actions.Canvas.bridge(this, 1)
-        if (jimp.animated) {
-          for (let i = 0; i < jimp.totalFrames; i++) {
+        if (this.animated) {
+          for (let i = 0; i < this.totalFrames; i++) {
             jimp.images[i][fncName]()
           }
         } else {
           jimp[fncName]()
         }
         const canvas = DBM.Actions.Canvas.bridge(jimp, 0)
-        this.image = (jimp.animated) ? canvas.images : canvas.image
+        this.image = (this.animated) ? canvas.images : canvas.image
       },
       param1 (fncName, param1) {
         const jimp = DBM.Actions.Canvas.bridge(this, 1)
-        if (jimp.animated) {
-          for (let i = 0; i < jimp.totalFrames; i++) {
+        if (this.animated) {
+          for (let i = 0; i < this.totalFrames; i++) {
             jimp.images[i][fncName](param1)
           }
         } else {
           jimp[fncName](param1)
         }
         const canvas = DBM.Actions.Canvas.bridge(jimp, 0)
-        this.image = (jimp.animated) ? canvas.images : canvas.image
+        this.image = (this.animated) ? canvas.images : canvas.image
       },
       param2 (fncName, param1, param2) {
-        const jimp = DBM.Actions.Canvas.bridge(this, 1)
-        if (jimp.animated) {
-          for (let i = 0; i < jimp.totalFrames; i++) {
+        const jimp = DBM.Actions.Canvas.bridge(this, 1, 'mirror')
+        if (this.animated) {
+          for (let i = 0; i < this.totalFrames; i++) {
             jimp.images[i][fncName](param1, param2)
           }
         } else {
           jimp[fncName](param1, param2)
         }
         const canvas = DBM.Actions.Canvas.bridge(jimp, 0)
-        this.image = (jimp.animated) ? canvas.images : canvas.image
+        this.image = (this.animated) ? canvas.images : canvas.image
       },
       param3 (fncName, param1, param2, param3) {
         const jimp = DBM.Actions.Canvas.bridge(this, 1)
         const jimp2 = DBM.Actions.Canvas.bridge(param1, 1)
-        if (jimp.animated) {
-          for (let i = 0; i < jimp.totalFrames; i++) {
+        if (this.animated) {
+          for (let i = 0; i < this.totalFrames; i++) {
             jimp.images[i][fncName](jimp2, param2, param3)
           }
         } else {
           jimp[fncName](jimp2, param2, param3)
         }
         const canvas = DBM.Actions.Canvas.bridge(jimp, 0)
-        this.image = (jimp.animated) ? canvas.images : canvas.image
+        this.image = (this.animated) ? canvas.images : canvas.image
       },
-      param5 (param1, param2, param3, param4, param5) { // param 4 & 5
+      param5 (fncName, param1, param2, param3, param4, param5) {
         const jimp = DBM.Actions.Canvas.bridge(this, 1)
-        if (jimp.animated) {
-          for (let i = 0; i < jimp.totalFrames; i++) {
-            jimp.images[i].print(param1, param2, param3, param4, param5) // width auto convert to Infinity if undefined
+        if (this.animated) {
+          for (let i = 0; i < this.totalFrames; i++) {
+            jimp.images[i][fncName](param1, param2, param3, param4, param5) // width auto convert to Infinity if undefined
           }
         } else {
-          jimp.image.print(param1, param2, param3, param4, param5)
+          jimp[fncName](param1, param2, param3, param4, param5)
         }
         const canvas = DBM.Actions.Canvas.bridge(jimp, 0)
-        this.image = (jimp.animated) ? canvas.images : canvas.image
+        this.image = (this.animated) ? canvas.images : canvas.image
       },
-      getBuffer (cb) {
+      getBuffer (mine, cb) {
         try {
           if (typeof cb !== 'function') {
             throw new Error('cb must be a function')
@@ -253,27 +255,69 @@ module.exports = {
         } catch (err) {
           cb(err)
         }
+      },
+      getBitmap () {
+        const img = DBM.Actions.Canvas.loadImage(this)
+        const { width, height } = img
+        return { width, height }
+      },
+      drawImage (img1, img2, x, y) {
+        for (let i = 0; i < img2.bitmap.width; i++) {
+          for (let j = 0; j < img2.bitmap.height; j++) {
+            const pos = (i * (img2.bitmap.width * 4)) + (j * 4)
+            const pos2 = ((i + y) * (img1.bitmap.width * 4)) + ((j + x) * 4)
+            const target = img1.bitmap.data
+            const source = img2.bitmap.data
+            for (let k = 0; k < 4; k++) {
+              target[pos2 + k] = source[pos + k]
+            }
+          }
+        }
+        return img1
       }
     }
 
     DBM.Images.drawImageOnImage = function (img1, img2, x, y) {
       const jimp = DBM.Actions.Canvas.bridge(img1, 1)
       const jimp2 = DBM.Actions.Canvas.bridge(img2, 1)
-      for (let i = 0; i < jimp2.bitmap.width; i++) {
-        for (let j = 0; j < jimp2.bitmap.height; j++) {
-          const pos = (i * (jimp2.bitmap.width * 4)) + (j * 4)
-          const pos2 = ((i + y) * (jimp.bitmap.width * 4)) + ((j + x) * 4)
-          const target = jimp.bitmap.data
-          const source = jimp2.bitmap.data
-          for (let k = 0; k < 4; k++) {
-            target[pos2 + k] = source[pos + k]
+      let tempImage = []
+      if (Array.isArray(jimp)) {
+        if (Array.isArray(jimp2)) {
+          const maxFrame = Math.max(jimp.length, jimp2.length)
+          let imgFrame = 0
+          let img2Frame = 0
+          for (let i = 0; i < maxFrame; i++) {
+            tempImage.push(DBM.Actions.Canvas.JimpFnc.drawImage(jimp[imgFrame], jimp2[img2Frame], x, y))
+            imgFrame = (imgFrame + 1 >= jimp.length) ? 0 : imgFrame + 1
+            img2Frame = (img2Frame + 1 >= jimp2.length) ? 0 : img2Frame + 1
+          }
+        } else {
+          for (let i = 0; i < jimp.length; i++) {
+            tempImage.push(DBM.Actions.Canvas.JimpFnc.drawImage(jimp[i], jimp2, x, y))
           }
         }
+      } else if (Array.isArray(jimp2)) {
+        for (let i = 0; i < jimp2.length; i++) {
+          tempImage.push(DBM.Actions.Canvas.JimpFnc.drawImage(jimp, jimp2[i], x, y))
+        }
+      } else {
+        tempImage = DBM.Actions.Canvas.JimpFnc.drawImage(jimp, jimp2, x, y)
       }
-      img1 = DBM.Actions.Canvas.bridge(jimp, 0)
+      if (Array.isArray(tempImage)) {
+        for (let i = 0; i < tempImage.length; i++) {
+          if (i < img1.images.length) {
+            img1.images[i] = DBM.Actions.Canvas.bridge(tempImage[i], 0).image
+          } else {
+            img1.images.push(DBM.Actions.Canvas.bridge(tempImage[i], 0).image)
+            img1.totalFrames = img1.images.length
+          }
+        }
+      } else {
+        img1.image = DBM.Actions.Canvas.bridge(tempImage, 0).image
+      }
     }
 
-    DBM.Action.Canvas.JimpImage = function (canvas, images) { // mainly for gif
+    DBM.Actions.Canvas.JimpImage = function (canvas, images) { // mainly for gif
       this.name = 'jimp'
       this.extensions = ['.gif']
       this.animated = true
@@ -312,6 +356,7 @@ module.exports = {
 
       this.blur = (param1) => DBM.Actions.Canvas.JimpFnc.param1.call(this, 'blur', param1)
       this.rotate = (param1) => DBM.Actions.Canvas.JimpFnc.param1.call(this, 'rotate', param1)
+      this.pixelate = (param1) => DBM.Actions.Canvas.JimpFnc.param1.call(this, 'pixelate', param1)
 
       this.mirror = (param1, param2) => DBM.Actions.Canvas.JimpFnc.param2.call(this, 'mirror', param1, param2)
       this.resize = (param1, param2) => DBM.Actions.Canvas.JimpFnc.param2.call(this, 'resize', param1, param2)
@@ -319,13 +364,14 @@ module.exports = {
       this.mask = (param1, param2, param3) => DBM.Actions.Canvas.JimpFnc.param3.call(this, 'mask', param1, param2, param3)
       this.composite = (param1, param2, param3) => DBM.Actions.Canvas.JimpFnc.param3.call(this, 'composite', param1, param2, param3)
 
-      this.print = (param1, param2, param3, param4, param5) => DBM.Actions.Canvas.JimpFnc.param5.call(this, param1, param2, param3, param4, param5)
+      this.print = (param1, param2, param3, param4, param5) => DBM.Actions.Canvas.JimpFnc.param5.call(this, 'print', param1, param2, param3, param4, param5)
 
+      this.bitmap = DBM.Actions.Canvas.JimpFnc.getBitmap.call(this)
       this.getBuffer = DBM.Actions.Canvas.JimpFnc.getBuffer
     }
 
-    DBM.Actions.Canvas.loadImage = function (sourceImage, needConvert) {
-      if (needConvert) sourceImage = this.bridge(sourceImage, 1) // auto convert if it is jimp image
+    DBM.Actions.Canvas.loadImage = function (sourceImage) {
+      if (sourceImage.constructor.name.toLowerCase() === 'jimp' || sourceImage.name.toLowerCase() === 'jimp') sourceImage = this.bridge(sourceImage, 0) // auto convert if it is jimp image
       if (sourceImage.animated) {
         const images = []
         for (let i = 0; i < sourceImage.images.length; i++) {

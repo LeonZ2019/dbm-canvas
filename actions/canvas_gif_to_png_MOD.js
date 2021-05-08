@@ -54,22 +54,22 @@ module.exports = {
     const data = cache.actions[cache.index]
     const storage = parseInt(data.storage)
     const varName = this.evalMessage(data.varName, cache)
-    const sourceImages = this.getVariable(storage, varName, cache)
+    const sourceImage = this.getVariable(storage, varName, cache)
     const frame = parseInt(this.evalMessage(data.frame, cache))
-    if (!sourceImages) {
+    if (!sourceImage) {
       this.Canvas.onError(data, cache, 'Image not exist!')
-    } else if (!sourceImages.animated) {
+    } else if (!sourceImage.animated) {
       this.Canvas.onError(data, cache, 'Image is not a gif image.')
     } else if (isNaN(frame)) {
       this.Canvas.onError(data, cache, 'Frame is not a number!')
-    } else if (frame > sourceImages.totalFrames) {
-      this.Canvas.onError(data, cache, `Gif image ${sourceImages.totalFrames} frames is less than ${frame}`)
+    } else if (frame > sourceImage.totalFrames) {
+      this.Canvas.onError(data, cache, `Gif image ${sourceImage.totalFrames} frames is less than ${frame}`)
     } else if (frame <= 0) {
       this.Canvas.onError(data, cache, 'Frame value cant be negative')
     } else {
       const storage2 = parseInt(data.storage2)
       const varName2 = this.evalMessage(data.varName2, cache)
-      this.storeValue(sourceImages.images[frame - 1], storage2, varName2, cache)
+      this.storeValue(new this.Canvas.Image(sourceImage.images[frame - 1]), storage2, varName2, cache)
     }
     this.callNextAction(cache)
   },

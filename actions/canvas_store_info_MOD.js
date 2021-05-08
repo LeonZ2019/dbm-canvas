@@ -145,7 +145,7 @@ module.exports = {
         break
       case 7: {
         const extraInfo = parseInt(this.evalMessage(data.extraInfo, cache))
-        if (sourceImage.animated && sourceImage.totalFrames > extraInfo) result = sourceImage.images[extraInfo]
+        if (sourceImage.animated && sourceImage.totalFrames > extraInfo && extraInfo <= 0) result = sourceImage.images[extraInfo]
         break
       }
     }

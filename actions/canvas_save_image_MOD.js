@@ -82,7 +82,7 @@ module.exports = {
       }
     }
     try {
-      fs.writeFileSync(path, this.toBuffer(sourceImage))
+      fs.writeFileSync(path, this.Canvas.toBuffer(sourceImage))
       const varName2 = this.evalMessage(data.varName2, cache)
       const storage2 = parseInt(data.storage2)
       if (varName2 && storage2) {

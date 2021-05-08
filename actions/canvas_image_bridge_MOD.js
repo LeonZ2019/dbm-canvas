@@ -92,8 +92,9 @@ module.exports = {
     }
 
     DBM.Actions.Canvas.bridge = function (sourceImage, type = -1) {
+      const name = sourceImage.name || sourceImage.constructor.name
       const Jimp = DBM.Actions.getMods().require('jimp')
-      switch (sourceImage.constructor.name.toLowerCase()) {
+      switch (name.toLowerCase()) {
         case 'jimp':
           if (type === 1) {
             return sourceImage
@@ -122,7 +123,7 @@ module.exports = {
           } else {
             if (sourceImage.animated) {
               const outputImgs = []
-              const images = this.loadImage(sourceImage, false)
+              const images = this.loadImage(sourceImage)
               const canvas = this.CanvasJS.createCanvas(sourceImage.width, sourceImage.height)
               for (let i = 0; i < images.length; i++) {
                 const imageData = this.getImageData(images, 0, 0, images[0].width, images[0].height)
@@ -130,7 +131,7 @@ module.exports = {
               }
               return new this.JimpImage(sourceImage, outputImgs)
             } else {
-              const image = this.loadImage(sourceImage, false)
+              const image = this.loadImage(sourceImage)
               const imageData = this.getImageData(image, 0, 0, image.width, image.height)
               return new Jimp({ data: Buffer.from(imageData.data), width: image.width, height: image.height })
             }
