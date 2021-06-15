@@ -81,7 +81,7 @@ module.exports = {
     }
     const options = {}
     if (typeof data.mirror !== 'undefined') options.flip = parseInt(data.mirror)
-    if (typeof data.rotate !== 'undefined') options.rotate = parseInt(data.rotation)
+    if (typeof data.rotation !== 'undefined') options.rotate = parseInt(data.rotation)
     if (typeof data.resampling !== 'undefined') options.resampling = parseInt(data.resampling)
     const scalex = this.evalMessage(data.width, cache)
     const scaley = this.evalMessage(data.height, cache)

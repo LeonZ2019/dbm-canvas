@@ -4,7 +4,7 @@ module.exports = {
 
   section: 'Image Editing',
 
-  version: '3.0.1',
+  version: '3.0.2',
 
   subtitle (data) {
     return `${data.url}`
