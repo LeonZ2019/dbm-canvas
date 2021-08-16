@@ -4,7 +4,9 @@ module.exports = {
 
   section: 'Image Editing',
 
-  version: '3.0.2',
+  version: '3.1.0',
+
+  defaultValue: { 'Canvas Create Background': { width: '', height: '', info: '0', gradient: '', color: '', storage: '1', varName: '', name: 'Canvas Create Background' }, 'Canvas Create Image': { url: 'resources/', type: '0', loop: '0', delay: '100', overlap: '0', storage: '1', varName: '', name: 'Canvas Create Image' }, 'Canvas Crop Image': { storage: '1', varName: '', align: '0', align2: '0', width: '100%', height: '100%', positionx: '0', positiony: '0', name: 'Canvas Crop Image' }, 'Canvas Draw Image on Image': { storage: '1', varName: '', storage2: '1', varName2: '', x: '0', y: '0', effect: '0', opacity: '100', expand: 'false', name: 'Canvas Draw Image on Image' }, 'Canvas Draw Text on Image': { storage: '1', varName: '', x: '0', y: '0', fontPath: 'fonts/', fontColor: 'FFFFFF', fontSize: '', align: '0', text: '', rotate: '0', antialias: 'true', maxWidth: '', fillType: 'fill', autoWrap: '1', name: 'Canvas Draw Text on Image' }, 'Canvas Edit Image Border': { storage: '1', varName: '', circleinfo: '0', radius: '0', name: 'Canvas Edit Image Border' }, 'Canvas Generate Graph': { type: '0', sort: '0', width: '', height: '', title: '', borderWidth: '', borderColor: '', borderColorAlpha: '1', bgColor: '', bgColorAlpha: '0.1', labels: '', datasets: '', storage: '1', varName: '', name: 'Canvas Generate Graph' }, 'Canvas Gif to Png': { storage: '1', varName: '', frame: '1', storage2: '1', varName2: '', name: 'Canvas Gif to Png' }, 'Canvas Image Bridge': { storage: '1', varName: '', type: '0', varName2: '', storage2: '1', name: 'Canvas Image Bridge' }, 'Canvas Image Filter': { storage: '1', varName: '', info: '0', value: '', name: 'Canvas Image Filter' }, 'Canvas Image Options': { storage: '1', varName: '', mirror: '0', rotation: '0', width: '100%', height: '100%', resampling: '0', opacity: '100%', name: 'Canvas Image Options' }, 'Canvas Image Recognize': { storage: '1', varName: '', left: '', top: '', width: '', height: '', lang: 'eng', offsetType: 'pixel', acceptRange: '80', max: '3', offset: '5', forceAccept: 'true', forceMax: 'true', debug: 'false', storage2: '1', varName2: '', name: 'Canvas Image Recognize' }, 'Canvas Save Image': { storage: '1', varName: '', Path: '', storage2: '0', varName2: '', name: 'Canvas Save Image' }, 'Canvas Send Image': { storage: '1', varName: '', channel: '0', varName2: '', sendOrReply: 'send', pingingAuthor: '1', replyingMessage: '0', replyingVarName: '', message: '', spoiler: '0', storage2: '0', varName3: '', imgName: 'image', name: 'Canvas Send Image' }, 'Canvas Set Gif Option': { storage: '1', varName: '', type: '0', value: '', name: 'Canvas Set Gif Option' }, 'Store Canvas Info': { storage: '1', varName: '', info: '0', info2: '', storage2: '1', varName2: '', name: 'Store Canvas Info' } },
 
   subtitle (data) {
     return `${data.url}`
@@ -16,13 +18,13 @@ module.exports = {
     return ([data.varName, 'Image'])
   },
 
-  fields: ['url', 'type', 'loop', 'delay', 'storage', 'varName'],
+  fields: ['url', 'type', 'loop', 'delay', 'overlap', 'storage', 'varName'],
 
   html (isEvent, data) {
     return `
   <div>
     <a id="link" href='#'>Local URL</a> / Web URL:<br>
-    <input id="url" class="round" type="text" value="resources/" placeholder="Support extension type (.png | .jpg | .gif)"><br>
+    <input id="url" class="round" type="text" value="resources/" placeholder="Support extension type (.png | .jpg | .gif)">
   </div>
   <div style="padding-top: 8px;">
     <div style="float: left; width: 50%;">
@@ -30,7 +32,15 @@ module.exports = {
       <select id="type" class="round" onchange="glob.onChange(this)">
         <option value="0" selected>Auto (.gif / .png / .jpg / .webp)</option>
         <option value="1">Animted Images (Local Image only)</option>
-        <option value="2">Still Image (.png / .webp)</option>
+        <option value="2">Still Image (.png / .jpg / .webp)</option>
+      </select>
+    </div>
+    <div id="overlapOpt" style="padding-left: 3%; float: left; width: 35%;">
+      Redraw Frame:<br>
+      <select id="overlap" class="round">
+        <option value="0" selected>Auto</option>
+        <option value="1">True</option>
+        <option value="2">False</option>
       </select>
     </div>
   </div><br><br><br>
@@ -64,26 +74,30 @@ module.exports = {
       require('child_process').execSync('start https://globster.xyz')
     }
     const gifOption = document.getElementById('gifOption')
+    const overlapOpt = document.getElementById('overlapOpt')
     glob.onChange = function (event) {
       if (parseInt(event.value) === 2) {
         gifOption.style.display = 'none'
+        overlapOpt.style.display = 'none'
       } else {
         gifOption.style.display = null
+        overlapOpt.style.display = null
       }
     }
     glob.onChange(document.getElementById('type'))
   },
 
   async action (cache) {
-    const data = cache.actions[cache.index]
+    const data = this.Canvas.updateValue(cache.actions[cache.index])
     const type = parseInt(data.type)
     const loop = parseInt(this.evalMessage(data.loop, cache))
     const delay = parseInt(this.evalMessage(data.delay, cache))
+    const overlap = parseInt(data.overlap)
     const url = this.evalMessage(data.url, cache)
     try {
       let image
       if (type !== 2) {
-        image = await this.Canvas.createImage(url, { loop, delay })
+        image = await this.Canvas.createImage(url, { loop, delay, overlap })
       } else {
         image = await this.Canvas.createImage(url)
       }
@@ -111,6 +125,7 @@ module.exports = {
       } else {
         console.error(chalk.hex(colors[0])(err))
       }
+      if (err.stack) console.error(err.stack)
     }
     if (!DBM.Actions.Canvas.CanvasJS) {
       try {
@@ -166,24 +181,48 @@ module.exports = {
     }
     DBM.Actions.Canvas.loadDependencies = function () {
       const Path = require('path')
-      let dependencies = this.Glob.sync(this.solvePath('canvas_dependencies\\*'))
-      if (dependencies.length === 0) {
-        throw new Error('Canvas dependencies not found')
-      } else {
-        dependencies = dependencies.filter((dependency) => {
-          if (process.platform !== 'win32') {
-            return ['', '.js'].includes(require('path').extname(dependency))
-          } else {
-            return ['.exe', '.js'].includes(require('path').extname(dependency))
-          }
-        })
-        this.dependencies = []
-        dependencies.forEach((dependency) => {
-          this.dependencies[Path.basename(dependency).replace(Path.extname(dependency), '')] = dependency
-        })
+      const fs = require('fs')
+      const path = this.solvePath('canvas_dependencies')
+      if (!fs.existsSync(path)) fs.mkdirSync(path, { recursive: true })
+      let dependencies = this.Glob.sync(Path.join(path, '*'))
+      const requiredDeps = { gifski: ['gifski.exe', 'gifski', 'https://github.com/ImageOptim/gifski/releases'], dwebp: ['dwebp.exe', 'dwebp', 'https://developers.google.com/speed/webp/download'], palette: ['palette.js', 'palette.js', 'https://github.com/google/palette.js/blob/master/palette.js'] }
+      dependencies = dependencies.filter((dependency) => {
+        if (process.platform !== 'win32') {
+          return ['', '.js'].includes(require('path').extname(dependency))
+        } else {
+          return ['.exe', '.js'].includes(require('path').extname(dependency))
+        }
+      })
+      this.dependencies = []
+      dependencies.forEach((dependency) => {
+        const fncName = Path.basename(dependency).replace(Path.extname(dependency), '')
+        if (requiredDeps[fncName]) {
+          this.dependencies[fncName] = dependency
+          delete requiredDeps[fncName]
+        }
+      })
+      if (Object.keys(requiredDeps).length > 0) {
+        let errorMessage = 'Canvas dependencies missing:'
+        for (const [dep, data] of Object.entries(requiredDeps)) {
+          errorMessage += `\n${(process.platform !== 'win32') ? data[1] : data[0]} - please download ${dep} at ${data[2]}`
+        }
+        this.onError('', '', errorMessage)
       }
     }
     DBM.Actions.Canvas.loadDependencies()
+    DBM.Actions.Canvas.DefaultValue = this.defaultValue
+    DBM.Actions.Canvas.updateValue = function (action) { // add new value if data doesn't exist, for people who just update github file without refresh data
+      const existAction = this.DefaultValue[action.name]
+      if (existAction) {
+        for (const [key, value] of Object.entries(existAction)) {
+          if (typeof action[key] === 'undefined') {
+            action[key] = value
+          }
+        }
+      }
+      return action
+    }
+
     DBM.Actions.Canvas.JimpFnc = {
       param0 (fncName) {
         const jimp = DBM.Actions.Canvas.bridge(this, 1)
@@ -414,25 +453,47 @@ module.exports = {
         } else if (files.length === 1) {
           const extname = Path.extname(files[0]).toLowerCase()
           if (extname.startsWith('.gif')) {
-            return new this.Image(await this.loadGif(files[0]))
+            return await this.loadGif(files[0], options)
           } else if (extname.startsWith('.webp')) {
             const temp = fs.mkdtempSync(require('os').tmpdir() + Path.sep)
             require('child_process').execSync(`"${this.dependencies.dwebp}" "${files[0]}" -quiet -o "${temp}${Path.sep}temp.png"`)
             const img = 'data:image/png;base64,' + fs.readFileSync(`${temp}${Path.sep}temp.png`).toString('base64')
-            fs.rmdirSync(temp, { recursive: true })
+            const fsFnc = (process.version.startsWith('v16')) ? 'rmSync' : 'rmdirSync'
+            fs[fsFnc](temp, { recursive: true })
             return new this.Image(img)
           } else {
             const image = await this.CanvasJS.loadImage(files[0])
             const canvas = this.CanvasJS.createCanvas(image.width, image.height)
-            const ctx = canvas.getContext('2d')
-            ctx.drawImage(image, 0, 0)
-            const returnImg = canvas.toDataURL('image/png')
             const width = image.width
             const height = image.height
+            const ctx = canvas.getContext('2d')
+            ctx.drawImage(image, 0, 0)
             if (options && !!options.isCache) {
-              return { returnImg, width, height } // getting biggest dimension
+              const imageData = ctx.getImageData(0, 0, width, height)
+              if ([0, 1].includes(options.overlap) && options.data.length > 0) {
+                const lastData = options.data[options.data.length - 1]
+                const nowAlpha = imageData.data.filter((v, i) => (i + 1) % 4 === 0)
+                const oldAlpha = lastData.filter((v, i) => (i + 1) % 4 === 0)
+                const nowCanFill = nowAlpha.filter((v, i) => v === 0 && oldAlpha[i] > 0).length
+                const nowFull = nowAlpha.filter(v => v > 0).length
+                const oldFull = oldAlpha.filter(v => v > 0).length
+                if ((options.overlap === 0 && nowFull + nowCanFill === oldFull) || options.overlap === 1) {
+                  for (let d = 3; d < imageData.data.length; d += 4) {
+                    if (imageData.data[d] === 0 && lastData[d] > 0) {
+                      imageData.data[d] = lastData[d]
+                      imageData.data[d - 1] = lastData[d - 1]
+                      imageData.data[d - 2] = lastData[d - 2]
+                      imageData.data[d - 3] = lastData[d - 3]
+                    }
+                  }
+                }
+              }
+              options.data.push(Array.from(imageData.data))
+              ctx.putImageData(imageData, 0, 0)
+              const returnImg = canvas.toDataURL('image/png')
+              return { returnImg, data: options.data, width, height } // getting biggest dimension
             } else {
-              return new this.Image(returnImg)
+              return new this.Image(canvas.toDataURL('image/png'))
             }
           }
         } else {
@@ -445,11 +506,12 @@ module.exports = {
           fs.writeFileSync(`${temp}${Path.sep}temp.webp`, await res.buffer())
           require('child_process').execSync(`"${this.dependencies.dwebp}" "${temp}${Path.sep}temp.webp" -quiet -o "${temp}${Path.sep}temp.png"`)
           const img = 'data:image/png;base64,' + fs.readFileSync(`${temp}${Path.sep}temp.png`).toString('base64')
-          fs.rmdirSync(temp, { recursive: true })
+          const fsFnc = (process.version.startsWith('v16')) ? 'rmSync' : 'rmdirSync'
+          fs[fsFnc](temp, { recursive: true })
           return new this.Image(img)
-        } else if (Path.extname(path).toLowerCase().startsWith('.gif')) { // need test for online .gif
-          return await this.loadGif(path) // weird maybe need download and createImage() again with cache
-        } else { // need test for online .jpg and .png
+        } else if (Path.extname(path).toLowerCase().startsWith('.gif')) {
+          return await this.loadGif(path, options)
+        } else {
           const image = await this.CanvasJS.loadImage(path)
           const canvas = this.CanvasJS.createCanvas(image.width, image.height)
           const ctx = canvas.getContext('2d')
@@ -460,16 +522,22 @@ module.exports = {
     }
 
     DBM.Actions.Canvas.loadGif = async function (path, options) {
-      let images = []; let loop; let delay; let width; let height
+      const images = []
+      const data = []
+      let loop, delay, width, height
       if (Array.isArray(path)) {
         console.log('Auto picked for the first image')
-        path = path[0] // autopick?
+        path = path[0]
       }
       if (require('path').extname(path) === '.gif') {
         const parsedGif = await this.PixelGif.parse(path)
         const canvas = this.CanvasJS.createCanvas(parsedGif[0].width, parsedGif[0].height)
+        delay = parsedGif.map(i => i.delay).reduce((a, c) => a + c, 0) / parsedGif.length
+        loop = (parsedGif.loop) ? parsedGif.loop : 0
+        width = canvas.width
+        height = canvas.height
         const ctx = canvas.getContext('2d')
-        let imageData = ctx.getImageData(0, 0, parsedGif[0].width, parsedGif[0].height)
+        let imageData = ctx.getImageData(0, 0, width, height)
         const backupImageData = imageData
         const tmpImages = (await this.PixelGif.parse(path)).filter(image => image != null)
         for (let i = 0; i < tmpImages.length; i++) {
@@ -477,19 +545,34 @@ module.exports = {
           for (let d = 0; d < parsedGif[i].data.length; d++) {
             imageData.data[d] = parsedGif[i].data[d]
           }
+          if ([0, 1].includes(options.overlap) && data.length > 0) {
+            const lastData = data[data.length - 1]
+            const nowAlpha = imageData.data.filter((v, i) => (i + 1) % 4 === 0)
+            const oldAlpha = lastData.filter((v, i) => (i + 1) % 4 === 0)
+            const nowCanFill = nowAlpha.filter((v, i) => v === 0 && oldAlpha[i] > 0).length
+            const nowFull = nowAlpha.filter(v => v > 0).length
+            const oldFull = oldAlpha.filter(v => v > 0).length
+            if ((options.overlap === 0 && nowFull + nowCanFill === oldFull) || options.overlap === 1) {
+              for (let d = 3; d < imageData.data.length; d += 4) {
+                if (imageData.data[d] === 0 && lastData[d] > 0) {
+                  imageData.data[d] = lastData[d]
+                  imageData.data[d - 1] = lastData[d - 1]
+                  imageData.data[d - 2] = lastData[d - 2]
+                  imageData.data[d - 3] = lastData[d - 3]
+                }
+              }
+            }
+          }
+          data.push(Array.from(imageData.data))
           ctx.putImageData(imageData, 0, 0)
           images.push(canvas.toDataURL('image/png'))
         }
-        delay = parsedGif.map(i => i.delay).reduce((a, c) => a + c, 0) / parsedGif.length
-        loop = (parsedGif.loop) ? parsedGif.loop : 0
-        width = parsedGif[0].width
-        height = parsedGif[0].height
       } else {
-        images = []
         const allWidth = []
         const allHeight = []
         for (let i = 0; i < path.length; i++) {
-          const image = await this.createImage(path[i], { isCache: true }) // made create image without research it again, minimize the time for function
+          const image = await this.createImage(path[i], { isCache: true, overlap: options.overlap, data }) // made create image without research it again, minimize the time for function
+          data.push(image.data)
           images.push(image.returnImg)
           allWidth.push(image.width)
           allHeight.push(image.height)

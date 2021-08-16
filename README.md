@@ -17,6 +17,7 @@
 
 - [Installation](#installation)
 - [NPM Module Required](#npm-module-required)
+- [Canvas Dependencies Required](#canvas-dependencies-required)
 - [Documentation](#documentation)
 - [Image Format](#image-format)
 - [Align Format](#align-format)
@@ -25,6 +26,7 @@
 ## Installation Guide
 - Download the release from [here](https://github.com/LeonZ2019/dbm-canvas/releases)
 - Extract files and folder to your bot's directory actions folder
+- Get all canvas dependencies from [here](#canvas-dependencies-required)
 
 ## NPM Module Required
 - Basic Section
@@ -44,6 +46,11 @@
  - [x] chalk
  - [x] node-fetch
 
+## Canvas Dependencies Required
+- [x] gifski https://github.com/ImageOptim/gifski/releases
+- [x] dwebp https://developers.google.com/speed/webp/download
+- [x] palette.js https://github.com/google/palette.js/blob/master/palette.js
+
 ## Documentation
 ### Basic Image Manipulate
 * [Create Image](#create-image)
@@ -59,7 +66,7 @@
 * [Generate Graph](#generate-graph)
 ### Others
 * [Image Buffer](#image-buffer)
-* [GIF Image Buffer](#gif-image-buffer)
+* [Save Image Local](#save-image-local)
 * [Discord Attachment](#discord-attachment)
 * [Image Bridge](#image-bridge)
 
@@ -72,8 +79,9 @@ Image type support png, jpg, gif webp(still image) and of course base64 image, i
 - [Object] **`options`**
   - [Integer] **`delay`** Delay for gif if image is animated
   - [Integer] **`loop`** Loop for gif if image is animated
+  - [Integer] **`overlap`** Redraw gif by previous frame, value should be `0` - `2`, `0` is Auto, `1` is True and `2` is False
 ```
-this.Canvas.createImage('https://www.website.com/image_**.png', { delay: 100, loop: 0 }).then((image) => {
+this.Canvas.createImage('https://www.website.com/image_**.png', { delay: 100, loop: 0, overlap: 0 }).then((image) => {
 })
 
 // or with async/await:
@@ -244,22 +252,21 @@ this.Canvas.generateChart('bar', 800, 400, 'Score', ['Team Red', 'Team Blue', 'T
 ```js
 DBM.Actions.Canvas.toBuffer(img) => [Buffer]
 ```
-Convert still image to buffer
+Convert gif/still image to buffer
 - [Image] **`img`** image generate from canvas
 ```js
 const buffer = DBM.Actions.Canvas.toBuffer(img)
-require('fs').writeFileSync('resources\image.png', buffer)
 ```
 
-## GIF Image Buffer
+## Save Image Local
 ```js
-DBM.Actions.Canvas.GifToBuffer(img) => [Buffer]
+DBM.Actions.Canvas.Export(img, destination)
 ```
-Convert gif or animated image to buffer
+Save gif/still image to local directly
 - [Image] **`img`** image generate from canvas
+- [String] **`destination`** local path for image
 ```js
-const buffer = DBM.Actions.Canvas.GifToBuffer(img)
-require('fs').writeFileSync('resources\image.gif', buffer)
+const buffer = DBM.Actions.Canvas.Export(img, 'resources\\export.png')
 ```
 
 ## Discord Attachment
@@ -291,18 +298,22 @@ const image = await this.Canvas.bridge(img, 0)
 
 ## Image Format
 - Still Image
-  - [String] Type
-  - Store in `base64` format, it should start with `data:image/png;base64`
+  - [Object] Type
+    - [Boolean] **`animated`** Is animated, default value is `false`
+    - [Array] **`extensions`** possible of image extension
+    - [Image] **`image`** image with base64 format, it should start with `data:image/png;base64`
   - Mainly format from `png`, `jpg`, `webp`, or `base64`
-- Animated Image
+- Animated/GIF Image
   - [Object] Type
     - [Integer] **`width`** Width of the gif
     - [Integer] **`height`** Height of the gif
     - [Boolean] **`animated`** Is animated, default value is `true`
+    - [Array] **`extensions`** possible of image extension
     - [Array] **`images`** Array images of the gif
       - [Image] **`img`** image generate from canvas
     - [Integer] **`delay`** Delay for the each frame
     - [Integer] **`loopCount`** Loop for the gif, if it is `0`, mean infinity loop
+    - [Integer] **`totalFrames`** Total frames in this gif image
   - Mainly format from `gif` or multiple local png image
 
 ## Align Format
@@ -328,4 +339,5 @@ const image = await this.Canvas.bridge(img, 0)
 14. Canvas Send Image
 15. Canvas Set Gif Option
 16. Store Canvas Info
-16. Canvas Generate Graph
+17. Canvas Generate Graph
+18. About Canvas Mod

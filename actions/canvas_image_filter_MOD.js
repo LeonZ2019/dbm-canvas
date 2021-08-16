@@ -66,8 +66,8 @@ module.exports = {
     glob.onChange1(document.getElementById('info'))
   },
 
-  action (cache) {
-    const data = cache.actions[cache.index]
+  async action (cache) {
+    const data = this.Canvas.updateValue(cache.actions[cache.index])
     const storage = parseInt(data.storage)
     const varName = this.evalMessage(data.varName, cache)
     const sourceImage = this.getVariable(storage, varName, cache)
@@ -79,7 +79,7 @@ module.exports = {
     const info = parseInt(data.info)
     const value = parseFloat(this.evalMessage(data.value, cache))
     try {
-      const image = this.Canvas.Filter(sourceImage, info, value)
+      const image = await this.Canvas.Filter(sourceImage, info, value)
       this.storeValue(image, storage, varName, cache)
       this.callNextAction(cache)
     } catch (err) {
@@ -93,57 +93,116 @@ module.exports = {
       let filtered
       switch (type) {
         case 0: case 'blur':
-          filtered = this.FilterJS.blur(imageData, { amount: (value / 100).toString() })
+          filtered = this.FilterJS.blur(imageData, { amount: value / 100 })
           break
         case 1: case 'huerotate':
-          filtered = this.FilterJS.hueRotate(imageData, { amount: (value / 180 * Math.PI).toString() })
+          filtered = this.FilterJS.hueRotate(imageData, { amount: value / 180 * Math.PI })
           break
         case 2: case 'brightness':
-          filtered = this.FilterJS.brightness(imageData, { amount: ((100 - value) / 100).toString() })
+          filtered = this.FilterJS.brightness(imageData, { amount: (100 - value) / 100 })
           break
         case 3: case 'contrast':
-          filtered = this.FilterJS.contrast(imageData, { amount: ((100 - value) / 100).toString() })
+          filtered = this.FilterJS.contrast(imageData, { amount: (100 - value) / 100 })
           break
         case 4: case 'grayscale':
-          filtered = this.FilterJS.grayscale(imageData, { amount: (value / 100).toString() })
+          filtered = this.FilterJS.grayscale(imageData, { amount: value / 100 })
           break
         case 5: case 'invert':
-          filtered = this.FilterJS.invert(imageData, { amount: (value / 100).toString() })
+          filtered = this.FilterJS.invert(imageData, { amount: value / 100 })
           break
         case 6: case 'opacity':
-          filtered = this.FilterJS.opacity(imageData, { amount: ((100 - value) / 100).toString() })
+          filtered = this.FilterJS.opacity(imageData, { amount: (100 - value) / 100 })
           break
         case 7: case 'saturate':
-          filtered = this.FilterJS.saturate(imageData, { amount: ((100 - value) / 100).toString() })
+          filtered = this.FilterJS.saturate(imageData, { amount: (100 - value) / 100 })
           break
         case 8: case 'sepia':
-          filtered = this.FilterJS.sepia(imageData, { amount: (value / 100).toString() })
+          filtered = this.FilterJS.sepia(imageData, { amount: value / 100 })
           break
       }
       return filtered
     }
-    DBM.Actions.Canvas.Filter = function (sourceImage, type, value) {
+    DBM.Actions.Canvas.Filter = async function (sourceImage, type, value) {
+      const blurOptimize = [[0.1, 10], [0.5, 2], [0.2, 2.5, 2]]
+      let blurSize = []
+      if (typeof type === 'string') type = type.toLowerCase()
+      if (['blur', 0].includes(type)) {
+        /* const Path = require('path')
+        const fs = require('fs')
+        const temp = fs.mkdtempSync(require('os').tmpdir() + Path.sep)
+        this.Export(sourceImage, Path.join(temp, 'temp.png'))
+        require('child_process').execSync(`"${this.dependencies.convert}" "${Path.join(temp, 'temp.png')}" -blur 0x${Math.floor(value / 100)} ${Path.join(temp, 'output.png')}`, { stdio: 'ignore' })
+        const output = await this.createImage(Path.join(temp, 'output.png'))
+        const fsFnc = (process.version.startsWith('v16')) ? 'rmSync' : 'rmdirSync'
+        fs[fsFnc](temp, { recursive: true })
+        return output */
+        let image = this.loadImage(sourceImage)
+        if (sourceImage.animated) {
+          image = image[0]
+        }
+        blurSize = blurOptimize[(image.width * image.height >= 1000000 || value >= 100) ? ((value > 500) ? 0 : 1) : 2]
+      }
       let image = this.loadImage(sourceImage)
       let images
       if (sourceImage.animated) {
         images = image
         image = images[0]
       }
-      if (typeof type === 'string') type = type.toLowerCase()
       const { width, height } = image
+      let filteredImage
+      const canvas = this.CanvasJS.createCanvas(width, height)
+      const ctx = canvas.getContext('2d')
       if (sourceImage.animated) {
         const tempImgs = []
         for (let i = 0; i < images.length; i++) {
-          const imgData = this.getImageData(image[i], 0, 0, width, height)
-          const imgDataFiltered = this.filterFnc(imgData, type, value)
-          tempImgs.push(this.putImageData(imgDataFiltered, 0, 0, width, height))
+          let blurIndex = 0
+          let draw = 0
+          while (draw === 0 || blurSize.length !== blurIndex) {
+            if (blurSize.length > blurIndex) {
+              canvas.width *= blurSize[blurIndex]
+              canvas.height *= blurSize[blurIndex]
+              ctx.patternQuality = 'good'
+              ctx.scale(blurSize[blurIndex], blurSize[blurIndex])
+              blurIndex++
+            }
+            ctx.clearRect(0, 0, canvas.width, canvas.height)
+            ctx.drawImage(images[i], 0, 0)
+            if (blurIndex !== 3) {
+              const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+              const imgDataFiltered = this.filterFnc(imgData, type, (blurIndex > 1) ? Math.max(Math.min(value / 50, 25), 10) : ((blurIndex === 1 && canvas.width * canvas.height <= 250000) ? ((value > 500) ? 500 : value) : value))
+              ctx.putImageData(imgDataFiltered, 0, 0)
+              image[i] = new this.CanvasJS.Image()
+              images[i].src = canvas.toDataURL('image/png')
+              draw++
+            }
+          }
+          tempImgs.push(canvas.toDataURL('image/png'))
         }
-        return new this.Image(tempImgs, sourceImage)
+        filteredImage = new this.Image(tempImgs, sourceImage)
       } else {
-        const imgData = this.getImageData(image, 0, 0, width, height)
-        const imgDataFiltered = this.filterFnc(imgData, type, value)
-        return this.putImageData(imgDataFiltered, 0, 0, width, height)
+        let blurIndex = 0
+        let draw = 0
+        while (draw === 0 || blurSize.length !== blurIndex) {
+          if (blurSize.length > blurIndex) {
+            canvas.width *= blurSize[blurIndex]
+            canvas.height *= blurSize[blurIndex]
+            ctx.patternQuality = 'good'
+            ctx.scale(blurSize[blurIndex], blurSize[blurIndex])
+            blurIndex++
+          }
+          ctx.drawImage(image, 0, 0)
+          if (blurIndex !== 3) {
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+            const imgDataFiltered = this.filterFnc(imgData, type, (blurIndex > 1) ? Math.max(Math.min(value / 50, 25), 10) : ((blurIndex === 1 && canvas.width * canvas.height <= 250000) ? ((value > 500) ? 500 : value) : value))
+            ctx.putImageData(imgDataFiltered, 0, 0)
+            image = new this.CanvasJS.Image()
+            image.src = canvas.toDataURL('image/png')
+            draw++
+          }
+        }
+        filteredImage = new this.Image(canvas.toDataURL('image/png'))
       }
+      return filteredImage
     }
   }
 

@@ -56,8 +56,7 @@ module.exports = {
   },
 
   action (cache) {
-    const data = cache.actions[cache.index]
-    const fs = require('fs')
+    const data = this.Canvas.updateValue(cache.actions[cache.index])
     const storage = parseInt(data.storage)
     const varName = this.evalMessage(data.varName, cache)
     const sourceImage = this.getVariable(storage, varName, cache)
@@ -66,35 +65,37 @@ module.exports = {
       this.callNextAction(cache)
       return
     }
-    let path = this.evalMessage(data.Path, cache)
+    const path = this.evalMessage(data.Path, cache)
     if (!path) {
       this.Canvas.onError(data, cache, 'Path not define.')
       return
-    } else {
-      let possibleExt = '.png'
-      // if () continue....
-      if (sourceImage.animated) possibleExt = '.gif'
-      const parse = require('path').parse(path)
-      if (parse.ext === '') {
-        path += possibleExt
-      } else if (parse.ext !== possibleExt) {
-        path = parse.name + possibleExt
-      }
     }
     try {
-      fs.writeFileSync(path, this.Canvas.toBuffer(sourceImage))
-      const varName2 = this.evalMessage(data.varName2, cache)
-      const storage2 = parseInt(data.storage2)
-      if (varName2 && storage2) {
-        this.storeValue(path, storage2, varName2, cache)
-      }
-      this.callNextAction(cache)
+      this.Canvas.Export(sourceImage, path)
     } catch (err) {
       this.Canvas.onError(data, cache, err)
     }
+    const varName2 = this.evalMessage(data.varName2, cache)
+    const storage2 = parseInt(data.storage2)
+    if (varName2 && storage2) {
+      this.storeValue(path, storage2, varName2, cache)
+    }
+    this.callNextAction(cache)
   },
 
-  mod () {
+  mod (DBM) {
+    DBM.Actions.Canvas.Export = function (sourceImage, destination) {
+      const Path = require('path')
+      const parsedDest = Path.parse(destination)
+      if (parsedDest.name === '') {
+        parsedDest.name = 'template'
+      }
+      if (parsedDest.ext === '' || !sourceImage.extensions.includes(parsedDest.ext)) {
+        parsedDest.ext = sourceImage.extensions[0]
+      }
+      destination = Path.join(parsedDest.dir, parsedDest.name + parsedDest.ext)
+      require('fs').writeFileSync(destination, this.toBuffer(sourceImage))
+    }
   }
 
 }

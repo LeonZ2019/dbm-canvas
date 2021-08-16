@@ -61,7 +61,7 @@ module.exports = {
   },
 
   async action (cache) {
-    const data = cache.actions[cache.index]
+    const data = this.Canvas.updateValue(cache.actions[cache.index])
     const storage = parseInt(data.storage)
     const varName = this.evalMessage(data.varName, cache)
     const image = this.getVariable(storage, varName, cache)
@@ -106,7 +106,7 @@ module.exports = {
               for (let i = 0; i < sourceImage.totalFrames; i++) {
                 const imageData = this.CanvasJS.createImageData(new Uint8ClampedArray(sourceImage.images[i].bitmap.data), canvas.width, canvas.height)
                 ctx.putImageData(imageData, 0, 0)
-                outputImgs.push(new this.Image(canvas.toDataURL('image/png')))
+                outputImgs.push(canvas.toDataURL('image/png'))
               }
               return new this.Image(outputImgs, { delay: sourceImage.delay, loop: sourceImage.loop, width: sourceImage.width, height: sourceImage.height })
             } else {

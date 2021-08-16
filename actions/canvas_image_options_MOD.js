@@ -70,7 +70,7 @@ module.exports = {
   },
 
   action (cache) {
-    const data = cache.actions[cache.index]
+    const data = this.Canvas.updateValue(cache.actions[cache.index])
     const storage = parseInt(data.storage)
     const varName = this.evalMessage(data.varName, cache)
     const sourceImage = this.getVariable(storage, varName, cache)
@@ -215,7 +215,7 @@ module.exports = {
             }
             ctx.putImageData(imagedata, 0, 0)
           }
-          tempImages.push(new this.Image(canvas.toDataURL('image/png')))
+          tempImages.push(canvas.toDataURL('image/png'))
         }
         sourceImage.width = imageWidth
         sourceImage.height = imageHeight

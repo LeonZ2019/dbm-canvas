@@ -82,26 +82,56 @@ module.exports = {
         })
       }
 
-      // function deleteFolderRecursive (directory) {
-      //   if (fs.existsSync(directory)) {
-      //     fs.readdirSync(directory).forEach(file => {
-      //       const curPath = path.join(directory, file)
-      //       if (fs.lstatSync(curPath).isDirectory()) {
-      //         deleteFolderRecursive(curPath)
-      //       } else {
-      //         fs.unlinkSync(curPath)
-      //       }
-      //     })
-      //     fs.rmdirSync(directory)
-      //   }
-      // }
+      function updateActions () {
+        document.getElementById('status').innerText = 'Updating data...'
+        delete require.cache[require.resolve('../actions/canvas_create_image_MOD_target')]
+        const defaultValue = require('../actions/canvas_create_image_MOD_target').defaultValue
+        if (defaultValue) {
+          const list = [globalObject.$evts, globalObject.$cmds]
+          let type = ''
+          for (const cmdEvt of list) {
+            type = (type === '') ? 'Event' : 'Command'
+            for (const rawData of cmdEvt) {
+              if (rawData && rawData.actions.length > 0) {
+                let found = false
+                rawData.actions.forEach((action, index, actions) => {
+                  if (defaultValue[action.name]) {
+                    if (!found) {
+                      found = true
+                      document.getElementById('status').innerText = `Updating data... Found ${type} [${rawData.name}](${rawData._id}) Action [${index + 1}] - "${action.name}"`
+                    }
+                    for (const [key, value] of Object.entries(defaultValue[action.name])) {
+                      if (typeof action[key] === 'undefined') {
+                        actions[index][key] = value // action[key]
+                        globalObject['console-log'](`Updated ${type} ${rawData.name} (${rawData._id}) Action [${index + 1}] - "${action.name}" set ${key} = "${value}"`)
+                      }
+                    }
+                  }
+                })
+              }
+            }
+          }
+          globalObject.updateCmds()
+          globalObject.updateEvts()
+          document.getElementById('status').innerText = 'Raw data updated!'
+        }
+      }
 
       async function update (json) {
-        document.getElementById('status').innerText = `Downloading files from to GitHub ${repository} v ${json.tag_name}`
+        const dLmessage = `Downloading files from to GitHub ${repository} v${json.tag_name}`
+        document.getElementById('status').innerText = dLmessage
         globalObject['console-log'](`Downloading files from to GitHub ${repository} v ${json.tag_name}`)
         const temp = fs.mkdtempSync(require('os').tmpdir() + path.sep)
         const zip = await fetch(json.zipball_url)
         zip.body.pipe(unzip.Extract({ path: temp }))
+        let receivedLength = 0
+        zip.body.on('readable', () => {
+          let chunk
+          while ((chunk = zip.body.read()) !== null) {
+            receivedLength += chunk.length
+            document.getElementById('status').innerText = `${dLmessage} Downloaded ${Math.floor(receivedLength / 1024)}KB`
+          }
+        })
         zip.body.on('end', async () => {
           const cwd = path.join(temp, fs.readdirSync(temp)[0])
           const files = fs.readdirSync(cwd)
@@ -114,16 +144,15 @@ module.exports = {
               document.getElementById('status').innerText = `Extracting ${filePath}...`
               if (fs.existsSync(desPath)) fs.unlinkSync(desPath)
               fs.copyFileSync(filePath, desPath, fs.constants.COPYFILE_FICLONE)
-              globalObject['console-log'](`Extracted from ${filePath} to ${desPath}`)
+              globalObject['console-log'](`Extracted file from ${filePath} to ${desPath}`)
             }
           })
-          document.getElementById('status').innerText = 'Cleaning temp folder... '
-          // deleteFolderRecursive(temp) nodejs v10.10.0
+          globalObject.reloadData()
+          updateActions()
           document.getElementById('status').innerText = 'Canvas mod is up to date'
-          document.getElementById('version').innerText = `Current Version: ${json.tag_name}`
+          document.getElementById('version').innerText = `Current Canvas Version: ${json.tag_name}`
           globalObject['console-log']('Canvas mod is up to date')
           globalObject['console-log'](`Current Version: ${json.tag_name}`)
-          globalObject.reloadData()
           globalObject.openLogWindow()
         })
       }
@@ -149,15 +178,31 @@ module.exports = {
           } else if (latest.minor === current.minor) {
             if (latest.revision > current.revision) {
               await update(json)
+            } else {
+              updateActions()
             }
+          } else {
+            updateActions()
           }
+        } else {
+          updateActions()
         }
       })
     }
   },
 
-  close () {
-    this.DBM.reloadData()
+  close (document, data, globalObject) {
+    if (document.getElementById('status').innerText.startsWith('Extracting')) {
+      globalObject.openLogWindow()
+      globalObject['console-log']('Reminder, close when extracting file to bot location.')
+    } else if (document.getElementById('status').innerText.startsWith('Updating')) {
+      globalObject.openLogWindow()
+      globalObject['console-log']('Reminder, close when updating canvas action raw data.')
+    } else if (document.getElementById('status').innerText.startsWith('Raw data')) {
+      globalObject.openLogWindow()
+    } else {
+      globalObject.reloadData()
+    }
   },
 
   mod () {

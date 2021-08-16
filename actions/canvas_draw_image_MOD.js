@@ -76,7 +76,7 @@ module.exports = {
   },
 
   action (cache) {
-    const data = cache.actions[cache.index]
+    const data = this.Canvas.updateValue(cache.actions[cache.index])
     const storage = parseInt(data.storage)
     const varName = this.evalMessage(data.varName, cache)
     const sourceImage = this.getVariable(storage, varName, cache)
@@ -165,7 +165,7 @@ module.exports = {
       const tempCanvas = this.CanvasJS.createCanvas(width, height)
       const tempCtx = tempCanvas.getContext('2d')
       tempCtx.putImageData(imageData, x, y)
-      return new this.Image(tempCanvas.toDataURL('image/png'))
+      return tempCanvas.toDataURL('image/png')
     }
 
     DBM.Actions.Canvas.drawImage = function (sourceImage, sourceImage2, options) {
@@ -191,7 +191,7 @@ module.exports = {
         sourceImage2.height = canvas.height
         for (let i = 0; i < image2.length; i++) {
           this.drawFnc(ctx, image, image2[i], canvas, options)
-          tempImages.push(new this.Image(canvas.toDataURL('image/png')))
+          tempImages.push(canvas.toDataURL('image/png'))
         }
         return new this.Image(tempImages, sourceImage2)
       } else if (sourceImage.animated && !sourceImage2.animated) {
@@ -199,7 +199,7 @@ module.exports = {
         sourceImage.height = canvas.height
         for (let i = 0; i < image.length; i++) {
           this.drawFnc(ctx, image[i], image2, canvas, options)
-          tempImages.push(new this.Image(canvas.toDataURL('image/png')))
+          tempImages.push(canvas.toDataURL('image/png'))
         }
         return new this.Image(tempImages, sourceImage)
       } else if (sourceImage.animated && sourceImage2.animated) {
@@ -210,7 +210,7 @@ module.exports = {
         let img2Frame = 0
         for (let i = 0; i < maxFrame; i++) {
           this.drawFnc(ctx, image[imgFrame], image2[img2Frame], canvas, options)
-          tempImages.push(new this.Image(canvas.toDataURL('image/png')))
+          tempImages.push(canvas.toDataURL('image/png'))
           imgFrame = (imgFrame + 1 >= image.length) ? 0 : imgFrame + 1
           img2Frame = (img2Frame + 1 >= image2.length) ? 0 : img2Frame + 1
         }

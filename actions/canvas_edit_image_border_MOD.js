@@ -47,7 +47,7 @@ module.exports = {
   },
 
   action (cache) {
-    const data = cache.actions[cache.index]
+    const data = this.Canvas.updateValue(cache.actions[cache.index])
     const storage = parseInt(data.storage)
     const varName = this.evalMessage(data.varName, cache)
     const dataUrl = this.getVariable(storage, varName, cache)
@@ -114,7 +114,7 @@ module.exports = {
         for (let i = 0; i < image.length; i++) {
           this.editBorderFnc(ctx, width, height, type, radius)
           ctx.drawImage(image[i], 0, 0)
-          tempImages.push(new this.Image(canvas.toDataURL('image/png')))
+          tempImages.push(canvas.toDataURL('image/png'))
         }
         return new this.Image(tempImages, sourceImage)
       } else {

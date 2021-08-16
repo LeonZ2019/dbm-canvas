@@ -111,7 +111,7 @@ module.exports = {
   },
 
   action (cache) {
-    const data = cache.actions[cache.index]
+    const data = this.Canvas.updateValue(cache.actions[cache.index])
     const storage = parseInt(data.storage)
     const varName = this.evalMessage(data.varName, cache)
     let type = parseInt(data.type, cache)

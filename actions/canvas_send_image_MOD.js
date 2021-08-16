@@ -5,8 +5,8 @@ module.exports = {
   section: 'Image Editing',
 
   subtitle (data) {
-    const channels = ['Same Channel', 'Command Author', 'Mentioned User', 'Mentioned Channel', 'Default Channel', 'Temp Variable', 'Server Variable', 'Global Variable']
-    return `${channels[parseInt(data.channel)]}`
+    const type = { send: 'Send', reply: 'Reply' }
+    return `${type[data.sendOrReply]} with ${(parseInt(data.spoiler) === 1) ? 'Spoiler Image' : 'Image'}`
   },
 
   variableStorage (data, varType) {
@@ -33,18 +33,6 @@ module.exports = {
       </div>
     </div><br><br><br>
     <div style="padding-top: 8px;">
-      <div style="float: left; width: 35%;">
-        Send To:<br>
-        <select id="channel" class="round" onchange="glob.sendTargetChange(this, 'varNameContainer')">
-          ${data.sendTargets[isEvent ? 1 : 0]}
-        </select>
-      </div>
-      <div id="varNameContainer" style="display: none; float: right; width: 60%;">
-        Variable Name:<br>
-        <input id="varName2" class="round" type="text" list="variableList"><br>
-      </div>
-    </div><br><br><br>
-    <div style="padding-top: 8px;">
       <div id="sendReply" style="float: left; width: 60%;">
         Action Type:<br>
         <select id="sendOrReply" class="round" onchange="glob.pingAuthor(this)">
@@ -60,6 +48,18 @@ module.exports = {
         </select>
       </div>
     </div><br><br><br>
+    <div id="targetChannel" style="padding-top: 8px;">
+      <div style="float: left; width: 35%;">
+        Send To:<br>
+        <select id="channel" class="round" onchange="glob.sendTargetChange(this, 'varNameContainer')">
+          ${data.sendTargets[isEvent ? 1 : 0]}
+        </select>
+      </div>
+      <div id="varNameContainer" style="display: none; float: right; width: 60%;">
+        Variable Name:<br>
+        <input id="varName2" class="round" type="text" list="variableList">
+      </div><br><br><br>
+    </div>
     <div id="replyMessage" style="padding-top: 8px;">
       <div style="float: left; width: 35%;">
         Replying Message:<br>
@@ -109,12 +109,17 @@ module.exports = {
     const pingAuthor = document.getElementById('pingAuthor')
     const replyMessage = document.getElementById('replyMessage')
     const sendOrReply = document.getElementById('sendOrReply')
+    const targetChannel = document.getElementById('targetChannel')
 
     glob.checkDJS = function () {
-      const { version } = require('discord.js')
-      if (version.startsWith('12')) {
-        const options = sendOrReply.getElementsByTagName('option')
-        options[1].disabled = true
+      const fs = require('fs')
+      const path = require('path')
+      const packageLoc = path.join(path.dirname(this.actLoc), 'node_modules\\discord.js\\package.json')
+      if (fs.existsSync(packageLoc)) {
+        if (JSON.parse(fs.readFileSync(packageLoc)).version.startsWith('12')) {
+          const options = sendOrReply.getElementsByTagName('option')
+          options[1].disabled = true
+        }
       }
     }
     glob.checkDJS()
@@ -123,9 +128,11 @@ module.exports = {
       if (select.value === 'send') {
         pingAuthor.style.display = 'none'
         replyMessage.style.display = 'none'
+        targetChannel.style.display = null
       } else {
         pingAuthor.style.display = null
         replyMessage.style.display = null
+        targetChannel.style.display = 'none'
       }
     }
     glob.pingAuthor(sendOrReply)
@@ -136,7 +143,7 @@ module.exports = {
   },
 
   async action (cache) {
-    const data = cache.actions[cache.index]
+    const data = this.Canvas.updateValue(cache.actions[cache.index])
     const storage = parseInt(data.storage)
     const varName = this.evalMessage(data.varName, cache)
     const sourceImage = this.getVariable(storage, varName, cache)
@@ -146,9 +153,6 @@ module.exports = {
       return
     }
     const content = this.evalMessage(data.message, cache)
-    const channel = parseInt(data.channel)
-    const varName2 = this.evalMessage(data.varName2, cache)
-    const targetChannel = this.getSendTarget(channel, varName2, cache)
     let name = this.evalMessage(data.imgName, cache)
     if (sourceImage.animated) {
       name += '.gif'
@@ -160,20 +164,21 @@ module.exports = {
       const attachment = await this.Canvas.toAttachment(sourceImage, name)
       let message
       if (this.getDBM().DiscordJS.version.startsWith('12')) data.sendOrReply = 'send'
+      const messageOptions = { files: [attachment] }
+      if (content !== '') messageOptions.content = content
       if (data.sendOrReply === 'send') {
-        if (targetChannel && targetChannel.send) message = await targetChannel.send(content === '' ? '' : content, attachment)
+        const channel = parseInt(data.channel)
+        const varName2 = this.evalMessage(data.varName2, cache)
+        const targetChannel = this.getSendTarget(channel, varName2, cache)
+        if (targetChannel && targetChannel.send) message = await targetChannel.send(messageOptions)
       } else if (data.sendOrReply === 'reply') {
         const msg = parseInt(data.replyingMessage)
         const varName2 = this.evalMessage(data.replyingVarName, cache)
         const replyMessage = this.getMessage(msg, varName2, cache)
-        const messageOptions = { files: [attachment] }
-        if (!parseInt(data.pingingAuthor)) messageOptions.allowedMentions = { repliedUser: false }
-        if (targetChannel && replyMessage && replyMessage.reply) {
-          if (replyMessage.channel.id === targetChannel.id) {
-            message = await replyMessage.reply(content === '' ? '' : content, messageOptions)
-          } else {
-            this.Canvas.onError(data, cache, 'Reply message must be same channel as the target channel!')
-          }
+        if (replyMessage && replyMessage.reply) {
+          if (!parseInt(data.pingingAuthor)) messageOptions.allowedMentions = { repliedUser: false }
+          // v13 components, ephemeral and stickers, let see how DBM handler it, mainly for interactionCreate but also can use with messageCreate
+          message = await replyMessage.reply(messageOptions)
         }
       }
       if (message) {
@@ -209,7 +214,8 @@ module.exports = {
         }
         require('child_process').execSync(`"${this.dependencies.gifski}" --quiet ${(sourceImage.loop !== 0) ? '--once ' : ''}--fps ${Math.round(1000 / sourceImage.delay)} -o "${temp}${path.sep}temp.gif" "${temp}${path.sep}image_"*.png`)
         const buffer = fs.readFileSync(`${temp}${path.sep}temp.gif`)
-        fs.rmdirSync(temp, { recursive: true })
+        const fsFnc = (process.version.startsWith('v16')) ? 'rmSync' : 'rmdirSync'
+        fs[fsFnc](temp, { recursive: true })
         return buffer
       } else {
         const canvas = this.CanvasJS.createCanvas(image.width, image.height)

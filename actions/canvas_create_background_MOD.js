@@ -86,7 +86,7 @@ module.exports = {
   },
 
   action (cache) {
-    const data = cache.actions[cache.index]
+    const data = this.Canvas.updateValue(cache.actions[cache.index])
     const Canvas = require('canvas')
     const width = parseInt(this.evalMessage(data.width, cache))
     const height = parseInt(this.evalMessage(data.height, cache))

@@ -98,7 +98,7 @@ module.exports = {
   },
 
   action (cache) {
-    const data = cache.actions[cache.index]
+    const data = this.Canvas.updateValue(cache.actions[cache.index])
     const storage = parseInt(data.storage)
     const varName = this.evalMessage(data.varName, cache)
     const sourceImage = this.getVariable(storage, varName, cache)
@@ -231,7 +231,7 @@ module.exports = {
         for (let i = 0; i < images.length; i++) {
           ctx.clearRect(0, 0, width, height)
           ctx.drawImage(images[i], x, y)
-          tempImages.push(new this.Image(canvas.toDataURL('image/png')))
+          tempImages.push(canvas.toDataURL('image/png'))
         }
         return new this.Image(tempImages, { delay, loop, width, height })
       } else {

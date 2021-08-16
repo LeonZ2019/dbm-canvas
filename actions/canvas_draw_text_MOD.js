@@ -79,7 +79,7 @@ module.exports = {
   action (cache) {
     const fs = require('fs')
     const path = require('path')
-    const data = cache.actions[cache.index]
+    const data = this.Canvas.updateValue(cache.actions[cache.index])
     const storage = parseInt(data.storage)
     const varName = this.evalMessage(data.varName, cache)
     const sourceImage = this.getVariable(storage, varName, cache)
@@ -153,12 +153,12 @@ module.exports = {
       }
       (!options.type || !['fill', 'stroke'].includes(options.type.toLowerCase())) ? options.type = 'fill' : options.type = options.type.toLowerCase()
       const font = this.OpenTypeJS.loadSync(path.normalize(options.font))
-      this.CanvasJS.registerFont(options.font, { family: font.names.postScriptName.en })
+      this.CanvasJS.registerFont(options.font, { family: font.names.fontFamily.en })
       const image = this.loadImage(sourceImage)
       const canvas = this.CanvasJS.createCanvas(image.width || sourceImage.width, image.height || sourceImage.height)
       const ctx = canvas.getContext('2d')
-      ctx.font = `${font.names.fontSubfamily.en} ${options.size}px "${font.names.postScriptName.en}"`
-      ctx.fillStyle = options.color
+      ctx.font = `${font.names.fontSubfamily.en} ${options.size}px "${font.names.fontFamily.en}"` // hopefully can change to opentype.js, cairo no longer will have problem loading incorrect/missing info file
+      ctx.fillStyle = options.color // gradient? mask with image?
       switch (options.align) {
         case 1:
         case 'TC':
@@ -252,15 +252,23 @@ module.exports = {
               let postMeasure = true
               let around = Math.floor(measure.length / width * maxWidth)
               while (postMeasure) {
-                const reWidth = ctx.measureText(measure.slice(0, around)).width
-                if (reWidth <= maxWidth) { around-- } else {
-                  text.push(measure.slice(0, around))
-                  measure = measure.substr(around)
-                  tempText[0] = measure
-                  if (width - reWidth > maxWidth) {
-                    around = Math.floor(measure.length / (width - reWidth) * maxWidth)
+                if (around <= 0) {
+                  text.push(measure)
+                  tempText.shift()
+                  postMeasure = false
+                } else {
+                  const reWidth = ctx.measureText(measure.slice(0, around)).width
+                  if (reWidth > maxWidth) {
+                    around--
                   } else {
-                    postMeasure = false
+                    text.push(measure.slice(0, around))
+                    measure = measure.substr(around)
+                    tempText[0] = measure
+                    if (width - reWidth > maxWidth) {
+                      around = Math.floor(measure.length / (width - reWidth) * maxWidth)
+                    } else {
+                      postMeasure = false
+                    }
                   }
                 }
               }
@@ -302,11 +310,11 @@ module.exports = {
           } else if (options.type === 'stroke') {
             (options.maxWidth) ? ctx.strokeText(text, 0, 0, options.maxWidth) : ctx.strokeText(text, 0, 0)
           }
-          tempImages.push(new this.Image(canvas.toDataURL('image/png')))
+          tempImages.push(canvas.toDataURL('image/png'))
           ctx.restore()
           ctx.clearRect(0, 0, canvas.width, canvas.height)
         }
-        return new this.Images(tempImages, sourceImage)
+        return new this.Image(tempImages, sourceImage)
       } else {
         ctx.drawImage(image, 0, 0)
         ctx.translate(options.x, options.y)
