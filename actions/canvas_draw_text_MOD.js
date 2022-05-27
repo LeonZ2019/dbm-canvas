@@ -119,10 +119,10 @@ module.exports = {
   },
 
   mod (DBM) {
-    if (!DBM.Actions.Canvas.OpenTypeJS) {
-      DBM.Actions.Canvas.OpenTypeJS = DBM.Actions.getMods().require('opentype.js')
-    }
     DBM.Actions.Canvas.drawText = function (sourceImage, text, options) {
+      if (!DBM.Actions.Canvas.OpenTypeJS) {
+        DBM.Actions.Canvas.OpenTypeJS = DBM.Actions.getMods().require('opentype.js')
+      }
       const path = require('path')
       if (!options) options = {}
       if (!options.color) {
@@ -310,11 +310,11 @@ module.exports = {
           } else if (options.type === 'stroke') {
             (options.maxWidth) ? ctx.strokeText(text, 0, 0, options.maxWidth) : ctx.strokeText(text, 0, 0)
           }
-          tempImages.push(canvas.toDataURL('image/png'))
+          tempImages.push(this.toDataURL(canvas))
           ctx.restore()
           ctx.clearRect(0, 0, canvas.width, canvas.height)
         }
-        return new this.Image(tempImages, sourceImage)
+        sourceImage.image = tempImages
       } else {
         ctx.drawImage(image, 0, 0)
         ctx.translate(options.x, options.y)
@@ -324,8 +324,9 @@ module.exports = {
         } else if (options.type === 'stroke') {
           (options.maxWidth) ? ctx.strokeText(text, 0, 0, options.maxWidth) : ctx.strokeText(text, 0, 0)
         }
-        return new this.Image(canvas.toDataURL('image/png'))
+        sourceImage.image = this.toDataURL(canvas)
       }
+      return sourceImage
     }
   }
 

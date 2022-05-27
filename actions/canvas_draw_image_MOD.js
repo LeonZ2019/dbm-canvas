@@ -128,9 +128,10 @@ module.exports = {
       return Luminance
     }
 
-    DBM.Actions.Canvas.drawFnc = function (ctx, image, image2, canvas, options) {
+    DBM.Actions.Canvas.drawFnc = function (canvas, image, image2, options) {
       const { x, y, opacity, effect } = options
       const { width, height } = canvas
+      const ctx = canvas.getContext('2d')
       ctx.clearRect(0, 0, width, height)
       if (effect && effect === 'mask') {
         const imageData = this.getImageData(image, 0, 0, image.width, image.height)
@@ -161,11 +162,19 @@ module.exports = {
       return tempCtx.getImageData(0, 0, width, height)
     }
 
-    DBM.Actions.Canvas.putImageData = function (imageData, x, y, width, height) {
-      const tempCanvas = this.CanvasJS.createCanvas(width, height)
-      const tempCtx = tempCanvas.getContext('2d')
-      tempCtx.putImageData(imageData, x, y)
-      return tempCanvas.toDataURL('image/png')
+    DBM.Actions.Canvas.putImageData = function (sourceImage, imageData, x, y, index = 0) { // index for gif use only
+      const image = this.loadImage(sourceImage, index)
+      const canvas = this.CanvasJS.createCanvas(sourceImage.width, sourceImage.height)
+      const ctx = canvas.getContext('2d')
+      if (sourceImage.animated) {
+        ctx.drawImage(image[index], 0, 0)
+        ctx.putImageData(imageData, x, y)
+        sourceImage.image[index] = this.toDataURL(canvas)
+      } else {
+        ctx.putImageData(imageData, x, y)
+        sourceImage.image = this.toDataURL(canvas)
+      }
+      return sourceImage
     }
 
     DBM.Actions.Canvas.drawImage = function (sourceImage, sourceImage2, options) {
@@ -182,39 +191,40 @@ module.exports = {
       }
       const tempImages = []
       const canvas = (options.expand) ? this.CanvasJS.createCanvas(Math.max(width, (image2.width || sourceImage2.width) + options.x), Math.max(height, (image2.height || sourceImage2.height) + options.y)) : this.CanvasJS.createCanvas(width, height)
-      const ctx = canvas.getContext('2d')
+      sourceImage.width = canvas.width
+      sourceImage.height = canvas.height
       if (!sourceImage.animated && !sourceImage2.animated) {
-        this.drawFnc(ctx, image, image2, canvas, options)
-        return new this.Image(canvas.toDataURL('image/png'))
+        this.drawFnc(canvas, image, image2, options)
+        sourceImage.image = this.toDataURL(canvas)
+        return sourceImage
       } else if (!sourceImage.animated && sourceImage2.animated) {
         sourceImage2.width = canvas.width
         sourceImage2.height = canvas.height
         for (let i = 0; i < image2.length; i++) {
-          this.drawFnc(ctx, image, image2[i], canvas, options)
-          tempImages.push(canvas.toDataURL('image/png'))
+          this.drawFnc(canvas, image, image2[i], options)
+          tempImages.push(this.toDataURL(canvas))
         }
-        return new this.Image(tempImages, sourceImage2)
+        sourceImage2.image = tempImages
+        return sourceImage2
       } else if (sourceImage.animated && !sourceImage2.animated) {
-        sourceImage.width = canvas.width
-        sourceImage.height = canvas.height
         for (let i = 0; i < image.length; i++) {
-          this.drawFnc(ctx, image[i], image2, canvas, options)
-          tempImages.push(canvas.toDataURL('image/png'))
+          this.drawFnc(canvas, image[i], image2, options)
+          tempImages.push(this.toDataURL(canvas))
         }
-        return new this.Image(tempImages, sourceImage)
+        sourceImage.image = tempImages
+        return sourceImage
       } else if (sourceImage.animated && sourceImage2.animated) {
-        sourceImage.width = canvas.width
-        sourceImage.height = canvas.height
         const maxFrame = Math.max(image.length, image2.length)
         let imgFrame = 0
         let img2Frame = 0
         for (let i = 0; i < maxFrame; i++) {
-          this.drawFnc(ctx, image[imgFrame], image2[img2Frame], canvas, options)
-          tempImages.push(canvas.toDataURL('image/png'))
+          this.drawFnc(canvas, image[imgFrame], image2[img2Frame], options)
+          tempImages.push(this.toDataURL(canvas))
           imgFrame = (imgFrame + 1 >= image.length) ? 0 : imgFrame + 1
           img2Frame = (img2Frame + 1 >= image2.length) ? 0 : img2Frame + 1
         }
-        return new this.Image(tempImages, sourceImage)
+        sourceImage.image = tempImages
+        return sourceImage
       }
     }
   }
