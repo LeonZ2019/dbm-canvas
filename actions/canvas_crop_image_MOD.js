@@ -227,19 +227,18 @@ module.exports = {
       if (sourceImage.animated) {
         const tempImages = []
         const { width, height } = canvas
+        const { delay, loop } = sourceImage
         for (let i = 0; i < images.length; i++) {
           ctx.clearRect(0, 0, width, height)
           ctx.drawImage(images[i], x, y)
-          tempImages.push(this.toDataURL(canvas))
+          tempImages.push(canvas.toDataURL('image/png'))
         }
-        sourceImage.width = canvas.width
-        sourceImage.height = canvas.height
-        sourceImage.image = tempImages
+        return new this.Image(tempImages, { delay, loop, width, height })
       } else {
         ctx.drawImage(image, x, y)
-        sourceImage.image = this.toDataURL(canvas)
+        return new this.Image(canvas.toDataURL('image/png'))
       }
-      return sourceImage
     }
   }
+
 }

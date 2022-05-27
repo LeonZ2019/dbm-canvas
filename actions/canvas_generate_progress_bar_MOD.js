@@ -170,7 +170,7 @@ module.exports = {
           break
       }
       ctx.stroke()
-      return new this.Image(this.toDataURL('canvas'))
+      return new this.Image(canvas.toDataURL('image/png'))
     }
   }
 }

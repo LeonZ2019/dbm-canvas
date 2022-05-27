@@ -127,6 +127,15 @@ module.exports = {
       let blurSize = []
       if (typeof type === 'string') type = type.toLowerCase()
       if (['blur', 0].includes(type)) {
+        /* const Path = require('path')
+        const fs = require('fs')
+        const temp = fs.mkdtempSync(require('os').tmpdir() + Path.sep)
+        this.Export(sourceImage, Path.join(temp, 'temp.png'))
+        require('child_process').execSync(`"${this.dependencies.convert}" "${Path.join(temp, 'temp.png')}" -blur 0x${Math.floor(value / 100)} ${Path.join(temp, 'output.png')}`, { stdio: 'ignore' })
+        const output = await this.createImage(Path.join(temp, 'output.png'))
+        const fsFnc = (process.version.startsWith('v16')) ? 'rmSync' : 'rmdirSync'
+        fs[fsFnc](temp, { recursive: true })
+        return output */
         let image = this.loadImage(sourceImage)
         if (sourceImage.animated) {
           image = image[0]
@@ -163,11 +172,11 @@ module.exports = {
               const imgDataFiltered = this.filterFnc(imgData, type, (blurIndex > 1) ? Math.max(Math.min(value / 50, 25), 10) : ((blurIndex === 1 && canvas.width * canvas.height <= 250000) ? ((value > 500) ? 500 : value) : value))
               ctx.putImageData(imgDataFiltered, 0, 0)
               image[i] = new this.CanvasJS.Image()
-              images[i].src = this.toDataURL(canvas)
+              images[i].src = canvas.toDataURL('image/png')
               draw++
             }
           }
-          tempImgs.push(this.toDataURL(canvas))
+          tempImgs.push(canvas.toDataURL('image/png'))
         }
         filteredImage = new this.Image(tempImgs, sourceImage)
       } else {
@@ -187,11 +196,11 @@ module.exports = {
             const imgDataFiltered = this.filterFnc(imgData, type, (blurIndex > 1) ? Math.max(Math.min(value / 50, 25), 10) : ((blurIndex === 1 && canvas.width * canvas.height <= 250000) ? ((value > 500) ? 500 : value) : value))
             ctx.putImageData(imgDataFiltered, 0, 0)
             image = new this.CanvasJS.Image()
-            image.src = this.toDataURL(canvas)
+            image.src = canvas.toDataURL('image/png')
             draw++
           }
         }
-        filteredImage = new this.Image(this.toDataURL(canvas))
+        filteredImage = new this.Image(canvas.toDataURL('image/png'))
       }
       return filteredImage
     }

@@ -1,5 +1,3 @@
-// get image color? how? i think resize to 1x1 then we will have the image color
-// or Dominant Colors?
 module.exports = {
 
   name: 'Store Canvas Info',

@@ -199,25 +199,27 @@ module.exports = {
       ctx.translate(imageWidth / 2, imageHeight / 2)
       ctx.rotate(radian)
       ctx.scale(scaleWidth, scaleHeight)
-      sourceImage.width = imageWidth
-      sourceImage.height = imageHeight
       if (sourceImage.animated) {
+        const tempImages = []
         for (let i = 0; i < images.length; i++) {
           ctx.clearRect(imageWidth / 2, imageHeight / 2, canvas.width, canvas.height)
           ctx.drawImage(images[i], -sourceImage.width / 2, -sourceImage.height / 2)
           if (options.opacity) {
             const imagedata = ctx.getImageData(0, 0, canvas.width, canvas.height)
-            for (let j = 3; j < imagedata.data.length; j += 4) {
+            for (let i = 3; i < imagedata.data.length; i += 4) {
               if (!isNaN(options.opacity)) {
-                imagedata.data[j] = Math.min(Math.max(Number(options.opacity), 0), 255)
+                imagedata.data[i] = Math.min(Math.max(Number(options.opacity), 0), 255)
               } else if (options.opacity.endsWith('%')) {
-                imagedata.data[j] = imagedata.data[j] * parseInt(options.opacity) / 100
+                imagedata.data[i] = imagedata.data[i] * parseInt(options.opacity) / 100
               }
             }
             ctx.putImageData(imagedata, 0, 0)
           }
-          sourceImage.image[i] = this.toDataURL(canvas)
+          tempImages.push(canvas.toDataURL('image/png'))
         }
+        sourceImage.width = imageWidth
+        sourceImage.height = imageHeight
+        return new this.Image(tempImages, sourceImage)
       } else {
         ctx.drawImage(image, -image.width / 2, -image.height / 2)
         if (options.opacity) {
@@ -231,9 +233,8 @@ module.exports = {
           }
           ctx.putImageData(imagedata, 0, 0)
         }
-        sourceImage.image = this.toDataURL(canvas)
+        return new this.Image(canvas.toDataURL('image/png'))
       }
-      return sourceImage
     }
   }
 }

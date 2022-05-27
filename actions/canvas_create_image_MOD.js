@@ -4,7 +4,7 @@ module.exports = {
 
   section: 'Image Editing',
 
-  version: '3.1.0', // some pre release work that are not doing yet
+  version: '3.1.0',
 
   defaultValue: { 'Canvas Create Background': { width: '', height: '', info: '0', gradient: '', color: '', storage: '1', varName: '', name: 'Canvas Create Background' }, 'Canvas Create Image': { url: 'resources/', type: '0', loop: '0', delay: '100', overlap: '0', storage: '1', varName: '', name: 'Canvas Create Image' }, 'Canvas Crop Image': { storage: '1', varName: '', align: '0', align2: '0', width: '100%', height: '100%', positionx: '0', positiony: '0', name: 'Canvas Crop Image' }, 'Canvas Draw Image on Image': { storage: '1', varName: '', storage2: '1', varName2: '', x: '0', y: '0', effect: '0', opacity: '100', expand: 'false', name: 'Canvas Draw Image on Image' }, 'Canvas Draw Text on Image': { storage: '1', varName: '', x: '0', y: '0', fontPath: 'fonts/', fontColor: 'FFFFFF', fontSize: '', align: '0', text: '', rotate: '0', antialias: 'true', maxWidth: '', fillType: 'fill', autoWrap: '1', name: 'Canvas Draw Text on Image' }, 'Canvas Edit Image Border': { storage: '1', varName: '', circleinfo: '0', radius: '0', name: 'Canvas Edit Image Border' }, 'Canvas Generate Graph': { type: '0', sort: '0', width: '', height: '', title: '', borderWidth: '', borderColor: '', borderColorAlpha: '1', bgColor: '', bgColorAlpha: '0.1', labels: '', datasets: '', storage: '1', varName: '', name: 'Canvas Generate Graph' }, 'Canvas Gif to Png': { storage: '1', varName: '', frame: '1', storage2: '1', varName2: '', name: 'Canvas Gif to Png' }, 'Canvas Image Bridge': { storage: '1', varName: '', type: '0', varName2: '', storage2: '1', name: 'Canvas Image Bridge' }, 'Canvas Image Filter': { storage: '1', varName: '', info: '0', value: '', name: 'Canvas Image Filter' }, 'Canvas Image Options': { storage: '1', varName: '', mirror: '0', rotation: '0', width: '100%', height: '100%', resampling: '0', opacity: '100%', name: 'Canvas Image Options' }, 'Canvas Image Recognize': { storage: '1', varName: '', left: '', top: '', width: '', height: '', lang: 'eng', offsetType: 'pixel', acceptRange: '80', max: '3', offset: '5', forceAccept: 'true', forceMax: 'true', debug: 'false', storage2: '1', varName2: '', name: 'Canvas Image Recognize' }, 'Canvas Save Image': { storage: '1', varName: '', Path: '', storage2: '0', varName2: '', name: 'Canvas Save Image' }, 'Canvas Send Image': { storage: '1', varName: '', channel: '0', varName2: '', sendOrReply: 'send', pingingAuthor: '1', replyingMessage: '0', replyingVarName: '', message: '', spoiler: '0', storage2: '0', varName3: '', imgName: 'image', name: 'Canvas Send Image' }, 'Canvas Set Gif Option': { storage: '1', varName: '', type: '0', value: '', name: 'Canvas Set Gif Option' }, 'Store Canvas Info': { storage: '1', varName: '', info: '0', info2: '', storage2: '1', varName2: '', name: 'Store Canvas Info' } },
 
@@ -110,9 +110,9 @@ module.exports = {
     }
   },
 
-  async mod (DBM) {
+  mod (DBM) {
     DBM.Actions.Canvas = DBM.Actions.Canvas || {}
-    const { default: chalk } = await import('chalk')
+    const chalk = DBM.Actions.getMods().require('chalk')
     DBM.Actions.Canvas.onError = (data, cache, err) => {
       const colors = ['FF4C4C', 'FFFF7F', '00FF7F']
       if (data && cache) {
@@ -121,7 +121,7 @@ module.exports = {
       }
       if (err.message && err.message === 'Image given has not completed loading') {
         console.error(chalk.hex(colors[0])(err))
-        console.error(chalk.hex(colors[1])('Possible Solution: Canvas mod made for canvas image only.'))
+        console.error(chalk.hex(colors[1])('Possible Solution: Canvas mod only made for canvas.'))
       } else {
         console.error(chalk.hex(colors[0])(err))
       }
@@ -150,9 +150,23 @@ module.exports = {
         DBM.Actions.Canvas.onError('', '', err)
       }
     }
+    if (!DBM.Actions.Canvas.PixelGif) {
+      try {
+        DBM.Actions.Canvas.PixelGif = DBM.Actions.getMods().require('pixel-gif')
+      } catch (err) {
+        DBM.Actions.Canvas.onError('', '', err)
+      }
+    }
     if (!DBM.Actions.Canvas.Glob) {
       try {
         DBM.Actions.Canvas.Glob = DBM.Actions.getMods().require('glob')
+      } catch (err) {
+        DBM.Actions.Canvas.onError('', '', err)
+      }
+    }
+    if (!DBM.Actions.Canvas.Fetch) {
+      try {
+        DBM.Actions.Canvas.Fetch = DBM.Actions.getMods().require('node-fetch')
       } catch (err) {
         DBM.Actions.Canvas.onError('', '', err)
       }
@@ -210,17 +224,63 @@ module.exports = {
     }
 
     DBM.Actions.Canvas.JimpFnc = {
-      params (fncName, ...params) {
+      param0 (fncName) {
         const jimp = DBM.Actions.Canvas.bridge(this, 1)
-        if (fncName === 'composite') {
-          params[0] = DBM.Actions.Canvas.bridge(params[0], 1)
-        }
         if (this.animated) {
           for (let i = 0; i < this.totalFrames; i++) {
-            jimp.images[i][fncName](params)
+            jimp.images[i][fncName]()
           }
         } else {
           jimp[fncName]()
+        }
+        const canvas = DBM.Actions.Canvas.bridge(jimp, 0)
+        this.image = (this.animated) ? canvas.images : canvas.image
+      },
+      param1 (fncName, param1) {
+        const jimp = DBM.Actions.Canvas.bridge(this, 1)
+        if (this.animated) {
+          for (let i = 0; i < this.totalFrames; i++) {
+            jimp.images[i][fncName](param1)
+          }
+        } else {
+          jimp[fncName](param1)
+        }
+        const canvas = DBM.Actions.Canvas.bridge(jimp, 0)
+        this.image = (this.animated) ? canvas.images : canvas.image
+      },
+      param2 (fncName, param1, param2) {
+        const jimp = DBM.Actions.Canvas.bridge(this, 1, 'mirror')
+        if (this.animated) {
+          for (let i = 0; i < this.totalFrames; i++) {
+            jimp.images[i][fncName](param1, param2)
+          }
+        } else {
+          jimp[fncName](param1, param2)
+        }
+        const canvas = DBM.Actions.Canvas.bridge(jimp, 0)
+        this.image = (this.animated) ? canvas.images : canvas.image
+      },
+      param3 (fncName, param1, param2, param3) {
+        const jimp = DBM.Actions.Canvas.bridge(this, 1)
+        const jimp2 = DBM.Actions.Canvas.bridge(param1, 1)
+        if (this.animated) {
+          for (let i = 0; i < this.totalFrames; i++) {
+            jimp.images[i][fncName](jimp2, param2, param3)
+          }
+        } else {
+          jimp[fncName](jimp2, param2, param3)
+        }
+        const canvas = DBM.Actions.Canvas.bridge(jimp, 0)
+        this.image = (this.animated) ? canvas.images : canvas.image
+      },
+      param5 (fncName, param1, param2, param3, param4, param5) {
+        const jimp = DBM.Actions.Canvas.bridge(this, 1)
+        if (this.animated) {
+          for (let i = 0; i < this.totalFrames; i++) {
+            jimp.images[i][fncName](param1, param2, param3, param4, param5) // width auto convert to Infinity if undefined
+          }
+        } else {
+          jimp[fncName](param1, param2, param3, param4, param5)
         }
         const canvas = DBM.Actions.Canvas.bridge(jimp, 0)
         this.image = (this.animated) ? canvas.images : canvas.image
@@ -300,7 +360,7 @@ module.exports = {
       this.name = 'jimp'
       this.extensions = ['.gif']
       this.animated = true
-      this.image = images // will hold jimp object here
+      this.images = images // will hold jimp object here
       this.width = canvas.width
       this.height = canvas.height
       this.delay = canvas.delay // delay (fps)
@@ -309,98 +369,61 @@ module.exports = {
     }
 
     DBM.Actions.Canvas.Image = function (source, options) {
-      /*if (typeof source === 'string' && source.startsWith('data:image/png;base64,')) {
-        source = DBM.Actions.Canvas.CanvasJS.loadImage(source) // this????
-      }*/
-      console.log(this) // debug to be remove
       this.name = 'canvas'
-      this.animated = false
-      this.image = source // this holding image base64
       if (Array.isArray(source)) {
         this.extensions = ['.gif']
+        this.images = source
         this.animated = true
+        this.width = options.width
+        this.height = options.height
         this.delay = options.delay
         this.loop = options.loop
         this.totalFrames = source.length
-        this.width = options.width
-        this.height = options.height
       } else {
         this.extensions = ['.png', '.jpg', '.webp'] // sort by prefer
-        source = DBM.Actions.Canvas.loadImage(source)
-        this.width = source.width
-        this.height = source.height
+        this.image = source
+        this.animated = false
       }
 
       // jimp fnc compability
-      this.greyscale = () => DBM.Actions.Canvas.JimpFnc.params.call(this, 'greyscale')
-      this.invert = () => DBM.Actions.Canvas.JimpFnc.params.call(this, 'invert')
-      this.normalize = () => DBM.Actions.Canvas.JimpFnc.params.call(this, 'normalize')
-      this.opaque = () => DBM.Actions.Canvas.JimpFnc.params.call(this, 'opaque')
-      this.sepia = () => DBM.Actions.Canvas.JimpFnc.params.call(this, 'sepia')
-      this.dither565 = () => DBM.Actions.Canvas.JimpFnc.params.call(this, 'dither565')
-      this.blur = (params) => DBM.Actions.Canvas.JimpFnc.params.call(this, 'blur', params)
-      this.rotate = (params) => DBM.Actions.Canvas.JimpFnc.params.call(this, 'rotate', params)
-      this.pixelate = (params) => DBM.Actions.Canvas.JimpFnc.params.call(this, 'pixelate', params)
-      this.mirror = (...params) => DBM.Actions.Canvas.JimpFnc.params.call(this, 'mirror', params)
-      this.resize = (...params) => DBM.Actions.Canvas.JimpFnc.params.call(this, 'resize', ...params)
-      this.mask = (...params) => DBM.Actions.Canvas.JimpFnc.params.call(this, 'mask', ...params)
-      this.composite = (...params) => DBM.Actions.Canvas.JimpFnc.params.call(this, 'composite', ...params)
-      this.print = (...params) => DBM.Actions.Canvas.JimpFnc.params.call(this, 'print', ...params)
+      this.greyscale = () => DBM.Actions.Canvas.JimpFnc.param0.call(this, 'greyscale')
+      this.invert = () => DBM.Actions.Canvas.JimpFnc.param0.call(this, 'invert')
+      this.normalize = () => DBM.Actions.Canvas.JimpFnc.param0.call(this, 'normalize')
+      this.opaque = () => DBM.Actions.Canvas.JimpFnc.param0.call(this, 'opaque')
+      this.sepia = () => DBM.Actions.Canvas.JimpFnc.param0.call(this, 'sepia')
+      this.dither565 = () => DBM.Actions.Canvas.JimpFnc.param0.call(this, 'dither565')
+
+      this.blur = (param1) => DBM.Actions.Canvas.JimpFnc.param1.call(this, 'blur', param1)
+      this.rotate = (param1) => DBM.Actions.Canvas.JimpFnc.param1.call(this, 'rotate', param1)
+      this.pixelate = (param1) => DBM.Actions.Canvas.JimpFnc.param1.call(this, 'pixelate', param1)
+
+      this.mirror = (param1, param2) => DBM.Actions.Canvas.JimpFnc.param2.call(this, 'mirror', param1, param2)
+      this.resize = (param1, param2) => DBM.Actions.Canvas.JimpFnc.param2.call(this, 'resize', param1, param2)
+
+      this.mask = (param1, param2, param3) => DBM.Actions.Canvas.JimpFnc.param3.call(this, 'mask', param1, param2, param3)
+      this.composite = (param1, param2, param3) => DBM.Actions.Canvas.JimpFnc.param3.call(this, 'composite', param1, param2, param3)
+
+      this.print = (param1, param2, param3, param4, param5) => DBM.Actions.Canvas.JimpFnc.param5.call(this, 'print', param1, param2, param3, param4, param5)
+
       this.bitmap = DBM.Actions.Canvas.JimpFnc.getBitmap.call(this)
       this.getBuffer = DBM.Actions.Canvas.JimpFnc.getBuffer
     }
 
-    /*DBM.Actions.Canvas.toImage = function (canvas) { // put this function to every end of other function
-      return this.loadImage(this.toDataURL(canvas))
-    }*/
-
-    DBM.Actions.Canvas.toDataURL = function (canvas) { // pending to confirm this function, could be for exporting function
-      return canvas.toDataURL('image/png')
-    }
-
-    DBM.Actions.Canvas.getImage = function (sourceImage) {
+    DBM.Actions.Canvas.loadImage = function (sourceImage) {
       if (sourceImage.constructor.name.toLowerCase() === 'jimp' || sourceImage.name.toLowerCase() === 'jimp') sourceImage = this.bridge(sourceImage, 0) // auto convert if it is jimp image
-      return sourceImage.image
-    }
-
-    DBM.Actions.Canvas.loadImage = function (source, index) { // wtf is type
-      let image
-      if (source.animated) {
-        if (!!index) {
-          image = new this.CanvasJS.Image()
-          image.src = source.image[index]
-        } else {
-          image = []
-          for (let i = 0; i < source.image.length; i++) {
-            const img = new this.CanvasJS.Image()
-            img.src = source.image[i]
-            image.push(img)
-          }
+      if (sourceImage.animated) {
+        const images = []
+        for (let i = 0; i < sourceImage.images.length; i++) {
+          const image = new this.CanvasJS.Image()
+          image.src = sourceImage.images[i]
+          images.push(image)
         }
+        return images
       } else {
-        image = new this.CanvasJS.Image()
-        image.src = source.image
+        const image = new this.CanvasJS.Image()
+        image.src = sourceImage.image
+        return image
       }
-      return image
-    }
-
-    DBM.Actions.Canvas.gifoverlap = function (imageData, lastImageData, overlap) {
-      const nowAlpha = imageData.data.filter((v, i) => (i + 1) % 4 === 0)
-      const oldAlpha = lastImageData.filter((v, i) => (i + 1) % 4 === 0)
-      const nowCanFill = nowAlpha.filter((v, i) => v === 0 && oldAlpha[i] > 0).length
-      const nowFull = nowAlpha.filter(v => v > 0).length
-      const oldFull = oldAlpha.filter(v => v > 0).length
-      if ((overlap === 0 && nowFull + nowCanFill === oldFull) || overlap === 1) {
-        for (let d = 3; d < imageData.data.length; d += 4) {
-          if (imageData.data[d] === 0 && lastImageData[d] > 0) {
-            imageData.data[d] = lastImageData[d]
-            imageData.data[d - 1] = lastImageData[d - 1]
-            imageData.data[d - 2] = lastImageData[d - 2]
-            imageData.data[d - 3] = lastImageData[d - 3]
-          }
-        }
-      }
-      return imageData
     }
 
     DBM.Actions.Canvas.createImage = async function (path, options) {
@@ -418,110 +441,139 @@ module.exports = {
           type = 'local'
         }
       }
-      switch (type) {
-        case 'local': {
-          let files
-          if (options && !options.isCache) {
-            files = this.Glob.sync(this.solvePath(path)).filter(file => ['.gif', '.webp', '.png', '.jpg'].includes(Path.extname(file).toLowerCase()))
-          } else {
-            files = [path]
-          }
-          if (files.length === 0) {
-            throw new Error('Image not exist!')
-          } else if (files.length === 1) {
-            const extname = Path.extname(files[0]).toLowerCase()
-            if (extname.startsWith('.gif')) {
-              return await this.loadGif(files[0], options)
-            } else if (extname.startsWith('.webp')) {
-              const temp = fs.mkdtempSync(require('os').tmpdir() + Path.sep)
-              require('child_process').execSync(`"${this.dependencies.dwebp}" "${files[0]}" -quiet -o "${temp}${Path.sep}temp.png"`)
-              const img = 'data:image/png;base64,' + fs.readFileSync(`${temp}${Path.sep}temp.png`).toString('base64')
-              const fsFnc = (process.version.startsWith('v16')) ? 'rmSync' : 'rmdirSync'
-              fs[fsFnc](temp, { recursive: true })
-              return new this.Image(img)
-            } else {
-              const image = await this.CanvasJS.loadImage(files[0])
-              const width = image.width
-              const height = image.height
-              const canvas = this.CanvasJS.createCanvas(width, height)
-              const ctx = canvas.getContext('2d')
-              ctx.drawImage(image, 0, 0)
-              if (options && options.overlap) {
-                if ([0, 1].includes(options.overlap) && options.data.length > 0) {
-                  let imageData = ctx.getImageData(0, 0, width, height)
-                  imageData = DBM.Actions.Canvas.gifoverlap(imageData, options.data, options.overlap)
-                  ctx.putImageData(imageData, 0, 0)
-                }
-                return { dataURL: this.toDataURL(canvas), data: Array.from(imageData.data), width, height }
-              } else {
-                return new this.Image(this.toDataURL(canvas))
-              }
-            }
-          } else {
-            return await this.loadGif(files, options)
-          }
+      if (type === 'local') {
+        let files
+        if (options && !!options.isCache) {
+          files = this.Glob.sync(this.solvePath(path)).filter(file => ['.gif', '.webp', '.png', '.jpg'].includes(Path.extname(file).toLowerCase()))
+        } else {
+          files = [path]
         }
-        case 'url': {
-          if (Path.extname(path).toLowerCase().startsWith('.webp')) {
-            if (!DBM.Actions.Canvas.Fetch) { // no longer pre require
-              try {
-                DBM.Actions.Canvas.Fetch = DBM.Actions.getMods().require('node-fetch')
-              } catch (err) {
-                DBM.Actions.Canvas.onError('', '', err)
-              }
-            }
-            const res = await this.Fetch(path)
+        if (files.length === 0) {
+          throw new Error('Image not exist!')
+        } else if (files.length === 1) {
+          const extname = Path.extname(files[0]).toLowerCase()
+          if (extname.startsWith('.gif')) {
+            return await this.loadGif(files[0], options)
+          } else if (extname.startsWith('.webp')) {
             const temp = fs.mkdtempSync(require('os').tmpdir() + Path.sep)
-            fs.writeFileSync(`${temp}${Path.sep}temp.webp`, await res.buffer())
-            require('child_process').execSync(`"${this.dependencies.dwebp}" "${temp}${Path.sep}temp.webp" -quiet -o "${temp}${Path.sep}temp.png"`)
+            require('child_process').execSync(`"${this.dependencies.dwebp}" "${files[0]}" -quiet -o "${temp}${Path.sep}temp.png"`)
             const img = 'data:image/png;base64,' + fs.readFileSync(`${temp}${Path.sep}temp.png`).toString('base64')
             const fsFnc = (process.version.startsWith('v16')) ? 'rmSync' : 'rmdirSync'
             fs[fsFnc](temp, { recursive: true })
             return new this.Image(img)
-          } else if (Path.extname(path).toLowerCase().startsWith('.gif')) {
-            return await this.loadGif(path, options)
           } else {
-            const image = await this.CanvasJS.loadImage(path)
+            const image = await this.CanvasJS.loadImage(files[0])
             const canvas = this.CanvasJS.createCanvas(image.width, image.height)
+            const width = image.width
+            const height = image.height
             const ctx = canvas.getContext('2d')
             ctx.drawImage(image, 0, 0)
-            return new this.Image(this.toDataURL(canvas))
+            if (options && !!options.isCache) {
+              const imageData = ctx.getImageData(0, 0, width, height)
+              if ([0, 1].includes(options.overlap) && options.data.length > 0) {
+                const lastData = options.data[options.data.length - 1]
+                const nowAlpha = imageData.data.filter((v, i) => (i + 1) % 4 === 0)
+                const oldAlpha = lastData.filter((v, i) => (i + 1) % 4 === 0)
+                const nowCanFill = nowAlpha.filter((v, i) => v === 0 && oldAlpha[i] > 0).length
+                const nowFull = nowAlpha.filter(v => v > 0).length
+                const oldFull = oldAlpha.filter(v => v > 0).length
+                if ((options.overlap === 0 && nowFull + nowCanFill === oldFull) || options.overlap === 1) {
+                  for (let d = 3; d < imageData.data.length; d += 4) {
+                    if (imageData.data[d] === 0 && lastData[d] > 0) {
+                      imageData.data[d] = lastData[d]
+                      imageData.data[d - 1] = lastData[d - 1]
+                      imageData.data[d - 2] = lastData[d - 2]
+                      imageData.data[d - 3] = lastData[d - 3]
+                    }
+                  }
+                }
+              }
+              options.data.push(Array.from(imageData.data))
+              ctx.putImageData(imageData, 0, 0)
+              const returnImg = canvas.toDataURL('image/png')
+              return { returnImg, data: options.data, width, height } // getting biggest dimension
+            } else {
+              return new this.Image(canvas.toDataURL('image/png'))
+            }
           }
+        } else {
+          return await this.loadGif(files, options)
+        }
+      } else if (type === 'url') {
+        if (Path.extname(path).toLowerCase().startsWith('.webp')) {
+          const res = await this.Fetch(path)
+          const temp = fs.mkdtempSync(require('os').tmpdir() + Path.sep)
+          fs.writeFileSync(`${temp}${Path.sep}temp.webp`, await res.buffer())
+          require('child_process').execSync(`"${this.dependencies.dwebp}" "${temp}${Path.sep}temp.webp" -quiet -o "${temp}${Path.sep}temp.png"`)
+          const img = 'data:image/png;base64,' + fs.readFileSync(`${temp}${Path.sep}temp.png`).toString('base64')
+          const fsFnc = (process.version.startsWith('v16')) ? 'rmSync' : 'rmdirSync'
+          fs[fsFnc](temp, { recursive: true })
+          return new this.Image(img)
+        } else if (Path.extname(path).toLowerCase().startsWith('.gif')) {
+          return await this.loadGif(path, options)
+        } else {
+          const image = await this.CanvasJS.loadImage(path)
+          const canvas = this.CanvasJS.createCanvas(image.width, image.height)
+          const ctx = canvas.getContext('2d')
+          ctx.drawImage(image, 0, 0)
+          return new this.Image(canvas.toDataURL('image/png'))
         }
       }
     }
-  
+
     DBM.Actions.Canvas.loadGif = async function (path, options) {
       const images = []
-      let data = []
+      const data = []
       let loop, delay, width, height
-      const sourcePath = path
-      if (Array.isArray(path)) path = path[0]
+      if (Array.isArray(path)) {
+        console.log('Auto picked for the first image')
+        path = path[0]
+      }
       if (require('path').extname(path) === '.gif') {
-        const parsedGif = await this.PixelGif.parse(sourcePath)
-        const tmpImages = parsedGif.filter(image => image != null)
+        const parsedGif = await this.PixelGif.parse(path)
+        const canvas = this.CanvasJS.createCanvas(parsedGif[0].width, parsedGif[0].height)
         delay = parsedGif.map(i => i.delay).reduce((a, c) => a + c, 0) / parsedGif.length
         loop = (parsedGif.loop) ? parsedGif.loop : 0
-        width = tmpImages[0].width
-        height = tmpImages[0].height
-        const canvas = this.CanvasJS.createCanvas(width, height)
+        width = canvas.width
+        height = canvas.height
         const ctx = canvas.getContext('2d')
-        for (let i = 0; i < images.length; i++) {
-          let imageData = this.CanvasJS.createImageData(new Uint8ClampedArray(parsedGif[i].data), width, height)
-          if ([0, 1].includes(options.overlap) && data.length > 0) { // if overlap auto or true and got cached image, could this overlap function broken since opacity is between 1 and 254?
-            imageData = this.gifoverlap(imageData, data[data.length - 1], options.overlap)
+        let imageData = ctx.getImageData(0, 0, width, height)
+        const backupImageData = imageData
+        const tmpImages = (await this.PixelGif.parse(path)).filter(image => image != null)
+        for (let i = 0; i < tmpImages.length; i++) {
+          imageData = backupImageData
+          for (let d = 0; d < parsedGif[i].data.length; d++) {
+            imageData.data[d] = parsedGif[i].data[d]
           }
-          data = Array.from(imageData.data) // need flush this shit, use less ram
+          if ([0, 1].includes(options.overlap) && data.length > 0) {
+            const lastData = data[data.length - 1]
+            const nowAlpha = imageData.data.filter((v, i) => (i + 1) % 4 === 0)
+            const oldAlpha = lastData.filter((v, i) => (i + 1) % 4 === 0)
+            const nowCanFill = nowAlpha.filter((v, i) => v === 0 && oldAlpha[i] > 0).length
+            const nowFull = nowAlpha.filter(v => v > 0).length
+            const oldFull = oldAlpha.filter(v => v > 0).length
+            if ((options.overlap === 0 && nowFull + nowCanFill === oldFull) || options.overlap === 1) {
+              for (let d = 3; d < imageData.data.length; d += 4) {
+                if (imageData.data[d] === 0 && lastData[d] > 0) {
+                  imageData.data[d] = lastData[d]
+                  imageData.data[d - 1] = lastData[d - 1]
+                  imageData.data[d - 2] = lastData[d - 2]
+                  imageData.data[d - 3] = lastData[d - 3]
+                }
+              }
+            }
+          }
+          data.push(Array.from(imageData.data))
           ctx.putImageData(imageData, 0, 0)
-          images.push(this.toDataURL(canvas))
+          images.push(canvas.toDataURL('image/png'))
         }
       } else {
         const allWidth = []
         const allHeight = []
-        for (let i = 0; i < sourcePath.length; i++) {
-          const image = await this.createImage(sourcePath[i], { isCache: true, overlap: options.overlap, data }) // made create image without research it again, minimize the time for function
-          data = image.data
-          images.push(image.dataURL)
+        for (let i = 0; i < path.length; i++) {
+          const image = await this.createImage(path[i], { isCache: true, overlap: options.overlap, data }) // made create image without research it again, minimize the time for function
+          data.push(image.data)
+          images.push(image.returnImg)
           allWidth.push(image.width)
           allHeight.push(image.height)
         }

@@ -90,7 +90,8 @@ module.exports = {
             this.Canvas.onError(cache, data, 'Please provide valid image format, png or jpg')
             return
           }
-          const array = this.Canvas.Glob.sync(value)
+          const glob = this.getMods().require('glob')
+          const array = glob.sync(value)
           if (array.length > 0) {
             const tempImages = []
             const allWidth = []
