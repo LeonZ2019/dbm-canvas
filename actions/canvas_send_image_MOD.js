@@ -197,12 +197,12 @@ module.exports = {
   mod (DBM) {
     DBM.Actions.Canvas.toBuffer = function (sourceImage) {
       const image = this.loadImage(sourceImage)
+      const canvas = this.CanvasJS.createCanvas(sourceImage.width, sourceImage.height)
+      const ctx = canvas.getContext('2d')
       if (sourceImage.animated) {
         const fs = require('fs')
         const path = require('path')
         const temp = fs.mkdtempSync(require('os').tmpdir() + path.sep)
-        const canvas = this.CanvasJS.createCanvas(sourceImage.width, sourceImage.height)
-        const ctx = canvas.getContext('2d')
         const frameLength = sourceImage.totalFrames.toString().length
         for (let i = 0; i < image.length; i++) {
           ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -218,8 +218,6 @@ module.exports = {
         fs[fsFnc](temp, { recursive: true })
         return buffer
       } else {
-        const canvas = this.CanvasJS.createCanvas(image.width, image.height)
-        const ctx = canvas.getContext('2d')
         ctx.drawImage(image, 0, 0)
         const buffer = canvas.toBuffer('image/png', { compressionLevel: 9 })
         return buffer

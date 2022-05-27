@@ -93,45 +93,42 @@ module.exports = {
 
     DBM.Actions.Canvas.bridge = function (sourceImage, type = -1) {
       const name = sourceImage.name || sourceImage.constructor.name
-      const Jimp = DBM.Actions.getMods().require('jimp')
       switch (name.toLowerCase()) {
-        case 'jimp':
+        case 'jimp': // this to be test......
           if (type === 1) {
             return sourceImage
-          } else {
+          } else { // jimp to canvas
+            const { width, height } = sourceImage
+            const canvas = this.CanvasJS.createCanvas(width, height)
+            const ctx = canvas.getContext('2d')
             if (sourceImage.animated) {
               const outputImgs = []
-              const canvas = this.CanvasJS.createCanvas(sourceImage.width, sourceImage.height)
-              const ctx = canvas.getContext('2d')
               for (let i = 0; i < sourceImage.totalFrames; i++) {
-                const imageData = this.CanvasJS.createImageData(new Uint8ClampedArray(sourceImage.images[i].bitmap.data), canvas.width, canvas.height)
+                const imageData = this.CanvasJS.createImageData(new Uint8ClampedArray(sourceImage.image[i].bitmap.data), width, height)
                 ctx.putImageData(imageData, 0, 0)
-                outputImgs.push(canvas.toDataURL('image/png'))
+                outputImgs.push(this.toDataURL(canvas))
               }
-              return new this.Image(outputImgs, { delay: sourceImage.delay, loop: sourceImage.loop, width: sourceImage.width, height: sourceImage.height })
+              return new this.Image(outputImgs, sourceImage)
             } else {
-              const canvas = this.CanvasJS.createCanvas(sourceImage.bitmap.width, sourceImage.bitmap.height)
-              const ctx = canvas.getContext('2d')
-              const imageData = this.CanvasJS.createImageData(new Uint8ClampedArray(sourceImage.bitmap.data), canvas.width, canvas.height)
+              const imageData = this.CanvasJS.createImageData(new Uint8ClampedArray(sourceImage.image.bitmap.data), width, height)
               ctx.putImageData(imageData, 0, 0)
-              return new this.Image(canvas.toDataURL('image/png'))
+              return new this.Image(this.toDataURL(canvas))
             }
           }
         case 'canvas':
+          const Jimp = DBM.Actions.getMods().require('jimp')
           if (type === 0) {
             return sourceImage
-          } else {
+          } else { // canvas to jimp
+            const image = this.loadImage(sourceImage)
             if (sourceImage.animated) {
               const outputImgs = []
-              const images = this.loadImage(sourceImage)
-              const canvas = this.CanvasJS.createCanvas(sourceImage.width, sourceImage.height)
-              for (let i = 0; i < images.length; i++) {
-                const imageData = this.getImageData(images, 0, 0, images[0].width, images[0].height)
-                outputImgs.push(new Jimp({ data: Buffer.from(imageData.data), width: canvas.width, height: canvas.height }))
+              for (let i = 0; i < image.length; i++) {
+                const imageData = this.getImageData(image[0], 0, 0, image[0].width, image[0].height)
+                outputImgs.push(new Jimp({ data: Buffer.from(imageData.data), width: sourceImage.width, height: sourceImage.height }))
               }
-              return new this.JimpImage(sourceImage, outputImgs)
+              return new this.JimpImage(outputImgs, sourceImage) // gif only
             } else {
-              const image = this.loadImage(sourceImage)
               const imageData = this.getImageData(image, 0, 0, image.width, image.height)
               return new Jimp({ data: Buffer.from(imageData.data), width: image.width, height: image.height })
             }

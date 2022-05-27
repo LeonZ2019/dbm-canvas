@@ -116,12 +116,13 @@ module.exports = {
           ctx.drawImage(image[i], 0, 0)
           tempImages.push(canvas.toDataURL('image/png'))
         }
-        return new this.Image(tempImages, sourceImage)
+        sourceImage.image = tempImages
       } else {
         this.editBorderFnc(ctx, width, height, type, radius)
         ctx.drawImage(image, 0, 0)
-        return new this.Image(canvas.toDataURL('image/png'))
+        sourceImage.image = this.toDataURL(canvas)
       }
+      return sourceImage
     }
   }
 
